@@ -267,24 +267,27 @@ const handleLogin = async () => {
   loading.value = true
   try {
     let res
+    let targetPath
     if (loginType.value === 'user') {
       res = await userApi.login(form)
       localStorage.setItem('role', '普通用户')
-      ElMessage.success('登录成功')
-      router.push('/user')
+      targetPath = '/user'
     } else {
       res = await collectorApi.login(form)
       localStorage.setItem('role', '回收员')
-      ElMessage.success('登录成功')
-      router.push('/collector')
+      targetPath = '/collector'
     }
 
+    // 先写入 token/user，避免路由守卫因无 token 而跳转登录
     localStorage.setItem('token', res?.token || res.token || 'token')
     localStorage.setItem('user', JSON.stringify(res))
 
     if (rememberMe.value) {
       localStorage.setItem('remember', JSON.stringify(form))
     }
+
+    ElMessage.success('登录成功')
+    router.push(targetPath)
   } catch (error) {
     ElMessage.error(error.message || '登录失败')
   } finally {

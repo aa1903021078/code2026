@@ -106,7 +106,7 @@ const pendingCount = ref(0)
 const menuItems = [
   { path: '/collector/workbench', name: '工作台', icon: Monitor, colorClass: 'blue' },
   { path: '/collector/orderCenter', name: '订单中心', icon: List, colorClass: 'cyan' },
-  { path: '/collector/map', name: '地图导航', icon: MapLocation, colorClass: 'green' },
+  { path: '/collector/navigation', name: '地图导航', icon: MapLocation, colorClass: 'green' },
   { path: '/collector/income', name: '收益统计', icon: Money, colorClass: 'amber' },
   { path: '/collector/profile', name: '个人中心', icon: User, colorClass: 'purple' }
 ]

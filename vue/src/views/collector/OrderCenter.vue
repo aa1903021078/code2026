@@ -602,52 +602,70 @@ const refreshData = async () => {
   }
 }
 
+// 统一从拦截器返回中提取数组；后端异常时返回 Result 对象（非数组）
+const extractList = (res) => {
+  if (Array.isArray(res)) return res
+  if (res && Array.isArray(res.data)) return res.data
+  if (res && res.code && res.code !== '200' && res.code !== 200) {
+    throw new Error(res.msg || '服务异常')
+  }
+  return []
+}
+
 // 加载抢单大厅（status=0）
 const loadHallData = async () => {
   try {
     const res = await request.get('/recycleOrder/selectByStatus/0')
-    if (res.code === '200' || res.code === 200) {
-      hallList.value = (res || []).map(item => ({ ...item, _grabbing: false }))
-      stats.hallCount = hallList.value.length
-      tabs.value[0].count = stats.hallCount
-      applyHallFilter()
-    } else {
-      ElMessage.error(res.msg || '加载失败')
-    }
+    const list = extractList(res)
+    hallList.value = list.map(item => ({ ...item, _grabbing: false }))
+    stats.hallCount = hallList.value.length
+    tabs.value[0].count = stats.hallCount
+    applyHallFilter()
   } catch (error) {
     console.error('加载抢单大厅失败:', error)
-    ElMessage.error('网络错误，请检查连接')
+    hallList.value = []
+    stats.hallCount = 0
+    tabs.value[0].count = 0
+    ElMessage.error(error?.message || '加载抢单大厅失败')
   }
 }
 
 // 加载我的订单
 const loadMyOrders = async () => {
-  if (!user.value.id) return
+  if (!user.value.id) {
+    myOrders.value = []
+    return
+  }
   try {
     const res = await request.get(`/recycleOrder/selectByCollector/${user.value.id}`)
-    if (res.code === '200' || res.code === 200) {
-      myOrders.value = res || []
+    myOrders.value = extractList(res)
 
-      // 更新统计
-      stats.pendingCount = myOrders.value.filter(o => o.status === 1).length
-      stats.processingCount = myOrders.value.filter(o => o.status === 2 || o.status === 3).length
-      stats.completedCount = myOrders.value.filter(o => {
-        if (o.status !== 4) return false
-        // 检查是否是今天完成的
-        const today = new Date().toDateString()
-        return o.completeTime ? new Date(o.completeTime).toDateString() === today : false
-      }).length
+    // 更新统计
+    stats.pendingCount = myOrders.value.filter(o => o.status === 1).length
+    stats.processingCount = myOrders.value.filter(o => o.status === 2 || o.status === 3).length
+    stats.completedCount = myOrders.value.filter(o => {
+      if (o.status !== 4) return false
+      const today = new Date().toDateString()
+      return o.completeTime ? new Date(o.completeTime).toDateString() === today : false
+    }).length
 
-      // 更新标签计数
-      tabs.value[1].count = stats.pendingCount
-      tabs.value[2].count = stats.processingCount
-      tabs.value[3].count = stats.completedCount
-    } else {
-      ElMessage.error(res.msg || '加载失败')
-    }
+    // 更新标签计数
+    tabs.value[1].count = stats.pendingCount
+    tabs.value[2].count = stats.processingCount
+    tabs.value[3].count = stats.completedCount
   } catch (error) {
     console.error('加载订单失败:', error)
+    myOrders.value = []
+    ElMessage.error(error?.message || '加载订单失败')
   }
+}
+
+// 后端非 200 时拦截器返回 Result 对象，这里统一校验并抛出真实错误信息
+const ensureSuccess = (res) => {
+  if (res && res.code && res.code !== '200' && res.code !== 200) {
+    throw new Error(res.msg || '操作失败')
+  }
+  return res
 }
 
 // 抢单
@@ -670,14 +688,11 @@ const handleGrab = async (order) => {
     const res = await request.post('/recycleOrder/grab', null, {
       params: { orderId: order.id, collectorId: user.value.id }
     })
+    ensureSuccess(res)
 
-    if (res.code === '200' || res.code === 200) {
-      ElMessage.success('抢单成功！')
-      await loadAllData()
-      activeTab.value = 'pending'
-    } else {
-      ElMessage.error(res.msg || '抢单失败')
-    }
+    ElMessage.success('抢单成功！')
+    await loadAllData()
+    activeTab.value = 'pending'
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error(error.message || '抢单失败')
@@ -694,14 +709,11 @@ const handleAccept = async (order) => {
     const res = await request.post('/recycleOrder/accept', null, {
       params: { orderId: order.id, collectorId: user.value.id }
     })
-    if (res.code === '200' || res.code === 200) {
-      ElMessage.success('接单成功')
-      await loadMyOrders()
-    } else {
-      ElMessage.error(res.msg || '操作失败')
-    }
+    ensureSuccess(res)
+    ElMessage.success('接单成功')
+    await loadMyOrders()
   } catch (error) {
-    if (error !== 'cancel') ElMessage.error('操作失败')
+    if (error !== 'cancel') ElMessage.error(error.message || '操作失败')
   }
 }
 
@@ -712,14 +724,11 @@ const handleArrive = async (order) => {
     const res = await request.post('/recycleOrder/arrive', null, {
       params: { orderId: order.id }
     })
-    if (res.code === '200' || res.code === 200) {
-      ElMessage.success('已确认到达')
-      await loadMyOrders()
-    } else {
-      ElMessage.error(res.msg || '操作失败')
-    }
+    ensureSuccess(res)
+    ElMessage.success('已确认到达')
+    await loadMyOrders()
   } catch (error) {
-    if (error !== 'cancel') ElMessage.error('操作失败')
+    if (error !== 'cancel') ElMessage.error(error.message || '操作失败')
   }
 }
 
@@ -749,16 +758,13 @@ const submitComplete = async () => {
       priceActual: completeForm.priceActual,
       remark: completeForm.remark
     })
-    if (res.code === '200' || res.code === 200) {
-      ElMessage.success('订单完成！')
-      completeVisible.value = false
-      await loadMyOrders()
-      activeTab.value = 'completed'
-    } else {
-      ElMessage.error(res.msg || '提交失败')
-    }
+    ensureSuccess(res)
+    ElMessage.success('订单完成！')
+    completeVisible.value = false
+    await loadMyOrders()
+    activeTab.value = 'completed'
   } catch (error) {
-    ElMessage.error('提交失败')
+    ElMessage.error(error.message || '提交失败')
   } finally {
     submitting.value = false
   }

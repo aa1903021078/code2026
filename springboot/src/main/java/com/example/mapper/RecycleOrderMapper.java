@@ -50,7 +50,19 @@ public interface RecycleOrderMapper {
 
     List<Map<String, Object>> selectCollectorRanking(@Param("limit") Integer limit);
 
-    RecycleOrder selectByIdWithVersion(Integer orderId);
+    RecycleOrder selectByIdWithVersion(@Param("id") Integer orderId);
 
-    int grabOrderWithVersion(Integer orderId, Integer collectorId, Integer oldVersion);
+    int grabOrderWithVersion(@Param("id") Integer orderId,
+                             @Param("collectorId") Integer collectorId,
+                             @Param("oldVersion") Integer oldVersion);
+
+    /**
+     * 查询回收员月度统计
+     */
+    Map<String, Object> selectCollectorMonthStats(@Param("collectorId") Integer collectorId);
+
+    /**
+     * 查询回收员每日收入明细
+     */
+    List<Map<String, Object>> selectCollectorIncomeList(@Param("collectorId") Integer collectorId, @Param("days") Integer days);
 }

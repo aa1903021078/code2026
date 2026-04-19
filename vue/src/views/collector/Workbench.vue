@@ -188,7 +188,7 @@ const refreshOrders = () => {
 
 const acceptOrder = async (orderId) => {
   try {
-    await request.post('/order/accept', null, { params: { orderId, collectorId: user.id } })
+    await request.post('/recycleOrder/accept', null, { params: { orderId, collectorId: user.id } })
     ElMessage.success('接单成功')
     loadOrders()
     loadStats()
@@ -200,7 +200,7 @@ const acceptOrder = async (orderId) => {
 const rejectOrder = async (orderId) => {
   try {
     await ElMessageBox.confirm('确认拒绝此订单？', '提示')
-    await request.post('/order/cancel', null, { params: { orderId, reason: '回收员拒绝' } })
+    await request.post('/recycleOrder/cancel', null, { params: { orderId, reason: '回收员拒绝' } })
     ElMessage.success('已拒绝')
     loadOrders()
   } catch (e) {}
@@ -208,7 +208,7 @@ const rejectOrder = async (orderId) => {
 
 const arrive = async (orderId) => {
   try {
-    await request.post('/order/arrive', null, { params: { orderId } })
+    await request.post('/recycleOrder/arrive', null, { params: { orderId } })
     ElMessage.success('已确认到达')
     loadOrders()
   } catch (error) {
@@ -228,7 +228,7 @@ const complete = (order) => {
 const confirmComplete = async () => {
   completing.value = true
   try {
-    await request.post('/order/complete', {
+    await request.post('/recycleOrder/complete', {
       id: completeForm.value.orderId,
       weightActual: completeForm.value.weightActual,
       priceActual: completeForm.value.priceActual

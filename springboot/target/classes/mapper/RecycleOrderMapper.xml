@@ -139,4 +139,32 @@
         and status = 0                  <!-- 确保仍是待分配状态 -->
     </update>
 
+    <!-- 回收员月度统计 -->
+    <select id="selectCollectorMonthStats" resultType="java.util.Map">
+        SELECT
+            COALESCE(COUNT(*), 0) AS orderCount,
+            COALESCE(SUM(price_actual), 0) AS income,
+            (SELECT COALESCE(SUM(price_actual), 0) FROM recycle_order WHERE collector_id = #{collectorId} AND status = 4) AS totalIncome
+        FROM recycle_order
+        WHERE collector_id = #{collectorId}
+          AND status = 4
+          AND DATE_FORMAT(complete_time, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+    </select>
+
+    <!-- 回收员每日收入明细 -->
+    <select id="selectCollectorIncomeList" resultType="java.util.Map">
+        SELECT
+            DATE_FORMAT(complete_time, '%Y-%m-%d') AS date,
+            COUNT(*) AS orderCount,
+            COALESCE(SUM(weight_actual), 0) AS totalWeight,
+            COALESCE(AVG(user_rating), 5) AS avgRating,
+            COALESCE(SUM(price_actual), 0) AS income
+        FROM recycle_order
+        WHERE collector_id = #{collectorId}
+          AND status = 4
+          AND complete_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        GROUP BY DATE_FORMAT(complete_time, '%Y-%m-%d')
+        ORDER BY date DESC
+    </select>
+
 </mapper>

@@ -110,4 +110,14 @@
         update collector set today_order_count = 0
     </update>
 
+    <select id="selectTodayCompleteStats" resultType="java.util.Map">
+        SELECT
+            COALESCE(COUNT(*), 0) AS completedCount,
+            COALESCE(SUM(price_actual), 0) AS todayIncome
+        FROM recycle_order
+        WHERE collector_id = #{collectorId}
+          AND status = 4
+          AND DATE(complete_time) = CURDATE()
+    </select>
+
 </mapper>

@@ -150,7 +150,7 @@ public class RecycleOrderController {
      * 分页查询
      */
     @GetMapping("/selectPage")
-    public Result SselectPage(RecycleOrder recycleOrder,
+    public Result selectPage(RecycleOrder recycleOrder,
                              @RequestParam(defaultValue = "1") Integer pageNum,
                              @RequestParam(defaultValue = "10") Integer pageSize) {
         PageInfo<RecycleOrder> pageInfo = recycleOrderService.selectPage(recycleOrder, pageNum, pageSize);
@@ -184,5 +184,24 @@ public class RecycleOrderController {
     public Result getStatistics() {
         Map<String, Object> stats = recycleOrderService.getStatistics();
         return Result.success(stats);
+    }
+
+    /**
+     * 回收员月度统计
+     */
+    @GetMapping("/collectorMonthStats")
+    public Result collectorMonthStats(@RequestParam Integer collectorId) {
+        Map<String, Object> stats = recycleOrderService.getCollectorMonthStats(collectorId);
+        return Result.success(stats);
+    }
+
+    /**
+     * 回收员每日收入明细
+     */
+    @GetMapping("/collectorIncomeList")
+    public Result collectorIncomeList(@RequestParam Integer collectorId,
+                                      @RequestParam(defaultValue = "30") Integer days) {
+        List<Map<String, Object>> list = recycleOrderService.getCollectorIncomeList(collectorId, days);
+        return Result.success(list);
     }
 }

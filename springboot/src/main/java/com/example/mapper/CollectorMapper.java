@@ -4,6 +4,7 @@ import com.example.entity.Collector;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 操作collector相关数据接口
@@ -80,6 +81,8 @@ public interface CollectorMapper {
      */
     void resetTodayOrderCount();
 
-
-
+    /**
+     * 查询回收员今日完成统计（完成数+今日收入）
+     */
+    Map<String, Object> selectTodayCompleteStats(@Param("collectorId") Integer collectorId);
 }

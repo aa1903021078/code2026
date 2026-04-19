@@ -604,4 +604,25 @@ public class RecycleOrderService {
         stats.put("activeUsers", recycleOrderMapper.countActiveUsers());
         return stats;
     }
+
+    /**
+     * 回收员月度统计
+     */
+    public Map<String, Object> getCollectorMonthStats(Integer collectorId) {
+        Map<String, Object> result = recycleOrderMapper.selectCollectorMonthStats(collectorId);
+        if (result == null) {
+            result = new HashMap<>();
+            result.put("orderCount", 0);
+            result.put("income", BigDecimal.ZERO);
+            result.put("totalIncome", BigDecimal.ZERO);
+        }
+        return result;
+    }
+
+    /**
+     * 回收员每日收入明细
+     */
+    public List<Map<String, Object>> getCollectorIncomeList(Integer collectorId, Integer days) {
+        return recycleOrderMapper.selectCollectorIncomeList(collectorId, days);
+    }
 }

@@ -320,6 +320,16 @@ public class CollectorService {
         stats.put("totalOrderCount", collector.getOrderCount());
         stats.put("rating", collector.getRating());
         stats.put("maxDailyOrders", collector.getMaxDailyOrders());
+
+        // 查询今日已完成订单数和今日收入
+        Map<String, Object> todayComplete = collectorMapper.selectTodayCompleteStats(id);
+        if (todayComplete != null) {
+            stats.put("completedCount", todayComplete.get("completedCount"));
+            stats.put("todayIncome", todayComplete.get("todayIncome"));
+        } else {
+            stats.put("completedCount", 0);
+            stats.put("todayIncome", BigDecimal.ZERO);
+        }
         return stats;
     }
 
