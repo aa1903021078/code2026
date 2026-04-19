@@ -633,15 +633,12 @@ const submitOrder = async () => {
     console.log('提交数据（含地址详情）:', submitData)
 
     const res = await request.post('/recycleOrder/create', submitData)
-    console.log('后端返回:', res, 'code类型:', typeof res?.code, 'code值:', res?.code)
-
-    if (res?.code === '200' || res?.code === 200) {
-      console.log('走进成功分支')
+    // request拦截器已在code=200时直接返回data，所以res就是订单对象
+    if (res) {
       ElMessage.success('预约成功')
-      router.push('/recycleOrder')
+      router.push('/user/orderList')
     } else {
-      console.error('走进失败分支, res:', res)  // 看这里输出什么
-      ElMessage.error(res?.msg || '预约失败')
+      ElMessage.error('预约失败')
     }
   } catch (error) {
     console.error('提交失败:', error)
