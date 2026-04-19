@@ -230,7 +230,7 @@
         </div>
 
         <!-- 回收员信息（新增） -->
-        <div class="detail-section collector-section" v-if="currentOrder.collectorName || currentOrder.status >= 1">
+        <div class="detail-section collector-section" v-if="currentOrder.status !== 5 && (currentOrder.collectorName || currentOrder.status >= 1)">
           <h4>🚚 回收员信息</h4>
           <div class="collector-card" v-if="currentOrder.collectorName">
             <div class="collector-avatar">
@@ -258,7 +258,7 @@
         </div>
 
         <!-- 订单进度时间轴（新增） -->
-        <div class="detail-section timeline-section">
+        <div class="detail-section timeline-section" v-if="currentOrder.status !== 5">
           <h4>📋 订单进度</h4>
           <el-timeline>
             <el-timeline-item
