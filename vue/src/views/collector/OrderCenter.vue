@@ -8,11 +8,11 @@
       </div>
       <div class="action-section">
         <el-radio-group v-model="viewMode" size="default">
-          <el-radio-button label="list">
+          <el-radio-button value="list">
             <el-icon><List /></el-icon>
             列表
           </el-radio-button>
-          <el-radio-button label="card">
+          <el-radio-button value="card">
             <el-icon><Grid /></el-icon>
             卡片
           </el-radio-button>
@@ -88,10 +88,10 @@
       <template v-if="activeTab === 'hall'">
         <div class="filter-bar">
           <el-radio-group v-model="hallFilter" size="small" @change="applyHallFilter">
-            <el-radio-button label="all">全部</el-radio-button>
-            <el-radio-button label="nearby">附近优先</el-radio-button>
-            <el-radio-button label="price">高价优先</el-radio-button>
-            <el-radio-button label="urgent">紧急</el-radio-button>
+            <el-radio-button value="all">全部</el-radio-button>
+            <el-radio-button value="nearby">附近优先</el-radio-button>
+            <el-radio-button value="price">高价优先</el-radio-button>
+            <el-radio-button value="urgent">紧急</el-radio-button>
           </el-radio-group>
         </div>
 

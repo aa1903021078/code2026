@@ -48,19 +48,19 @@
 
               <el-form-item label="品牌类型" prop="brandLevel">
                 <el-radio-group v-model="form.brandLevel" size="large">
-                  <el-radio-button label="一线品牌">
+                  <el-radio-button value="一线品牌">
                     <div class="radio-content">
                       <div class="radio-title">一线品牌</div>
                       <div class="radio-desc">格力、美的、海尔等</div>
                     </div>
                   </el-radio-button>
-                  <el-radio-button label="二线品牌">
+                  <el-radio-button value="二线品牌">
                     <div class="radio-content">
                       <div class="radio-title">二线品牌</div>
                       <div class="radio-desc">奥克斯、志高等</div>
                     </div>
                   </el-radio-button>
-                  <el-radio-button label="杂牌">
+                  <el-radio-button value="杂牌">
                     <div class="radio-content">
                       <div class="radio-title">杂牌/其他</div>
                       <div class="radio-desc">小品牌或不知名</div>
@@ -71,19 +71,19 @@
 
               <el-form-item label="使用年限" prop="usageYears">
                 <el-radio-group v-model="form.usageYears" size="large">
-                  <el-radio-button label="1年内">
+                  <el-radio-button value="1年内">
                     <div class="radio-content">
                       <div class="radio-title">1年内</div>
                       <div class="radio-desc">准新机</div>
                     </div>
                   </el-radio-button>
-                  <el-radio-button label="2-3年">
+                  <el-radio-button value="2-3年">
                     <div class="radio-content">
                       <div class="radio-title">2-3年</div>
                       <div class="radio-desc">正常使用</div>
                     </div>
                   </el-radio-button>
-                  <el-radio-button label="5年以上">
+                  <el-radio-button value="5年以上">
                     <div class="radio-content">
                       <div class="radio-title">5年以上</div>
                       <div class="radio-desc">老旧设备</div>
@@ -94,19 +94,19 @@
 
               <el-form-item label="功能状况" prop="functionalStatus">
                 <el-radio-group v-model="form.functionalStatus" size="large">
-                  <el-radio-button label="正常使用">
+                  <el-radio-button value="正常使用">
                     <div class="radio-content">
                       <div class="radio-title">正常使用</div>
                       <div class="radio-desc">各项功能完好</div>
                     </div>
                   </el-radio-button>
-                  <el-radio-button label="零件损坏">
+                  <el-radio-button value="零件损坏">
                     <div class="radio-content">
                       <div class="radio-title">零件损坏</div>
                       <div class="radio-desc">部分功能异常</div>
                     </div>
                   </el-radio-button>
-                  <el-radio-button label="无法开机">
+                  <el-radio-button value="无法开机">
                     <div class="radio-content">
                       <div class="radio-title">无法开机</div>
                       <div class="radio-desc">完全损坏</div>
@@ -117,19 +117,19 @@
 
               <el-form-item label="外观成色" prop="appearanceLevel">
                 <el-radio-group v-model="form.appearanceLevel" size="large">
-                  <el-radio-button label="完好">
+                  <el-radio-button value="完好">
                     <div class="radio-content">
                       <div class="radio-title">完好</div>
                       <div class="radio-desc">无明显痕迹</div>
                     </div>
                   </el-radio-button>
-                  <el-radio-button label="轻微划痕">
+                  <el-radio-button value="轻微划痕">
                     <div class="radio-content">
                       <div class="radio-title">轻微划痕</div>
                       <div class="radio-desc">正常使用痕迹</div>
                     </div>
                   </el-radio-button>
-                  <el-radio-button label="破损">
+                  <el-radio-button value="破损">
                     <div class="radio-content">
                       <div class="radio-title">破损</div>
                       <div class="radio-desc">外壳或部件损坏</div>
@@ -234,9 +234,9 @@
 
             <el-form-item label="紧急程度">
               <el-radio-group v-model="form.urgencyLevel">
-                <el-radio-button :label="1">普通</el-radio-button>
-                <el-radio-button :label="2">较急</el-radio-button>
-                <el-radio-button :label="3">紧急</el-radio-button>
+                <el-radio-button :value="1">普通</el-radio-button>
+                <el-radio-button :value="2">较急</el-radio-button>
+                <el-radio-button :value="3">紧急</el-radio-button>
               </el-radio-group>
             </el-form-item>
 

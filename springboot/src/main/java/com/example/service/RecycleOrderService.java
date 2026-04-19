@@ -228,18 +228,28 @@ public class RecycleOrderService {
         // 更新用户积分和统计
         User user = userMapper.selectById(recycleOrder.getUserId());
         if (ObjectUtil.isNotNull(user)) {
-            user.setPoints(user.getPoints() + recycleOrder.getPointsEarned());
-            user.setTotalRecycleCount(user.getTotalRecycleCount() + 1);
-            user.setTotalRecycleWeight(user.getTotalRecycleWeight().add(
-                    recycleOrder.getWeightActual() != null ? recycleOrder.getWeightActual() : BigDecimal.ZERO));
-            user.setCarbonSaved(user.getCarbonSaved().add(recycleOrder.getCarbonSaved()));
+            // 订单上新算的积分/碳减排可能为 null（如品类不存在时），兜底为 0
+            Integer earnedPoints = recycleOrder.getPointsEarned() != null ? recycleOrder.getPointsEarned() : 0;
+            BigDecimal earnedCarbon = recycleOrder.getCarbonSaved() != null ? recycleOrder.getCarbonSaved() : BigDecimal.ZERO;
+            BigDecimal earnedWeight = recycleOrder.getWeightActual() != null ? recycleOrder.getWeightActual() : BigDecimal.ZERO;
+
+            // 用户字段若为 null 也兜底
+            Integer curPoints = user.getPoints() != null ? user.getPoints() : 0;
+            Integer curCount = user.getTotalRecycleCount() != null ? user.getTotalRecycleCount() : 0;
+            BigDecimal curWeight = user.getTotalRecycleWeight() != null ? user.getTotalRecycleWeight() : BigDecimal.ZERO;
+            BigDecimal curCarbon = user.getCarbonSaved() != null ? user.getCarbonSaved() : BigDecimal.ZERO;
+
+            user.setPoints(curPoints + earnedPoints);
+            user.setTotalRecycleCount(curCount + 1);
+            user.setTotalRecycleWeight(curWeight.add(earnedWeight));
+            user.setCarbonSaved(curCarbon.add(earnedCarbon));
             userMapper.updateById(user);
 
             // 添加积分记录
             PointsRecord pointsRecord = new PointsRecord();
             pointsRecord.setUserId(user.getId());
             pointsRecord.setOrderId(recycleOrder.getId());
-            pointsRecord.setPoints(recycleOrder.getPointsEarned());
+            pointsRecord.setPoints(earnedPoints);
             pointsRecord.setType(1); // 回收获得
             pointsRecord.setDescription("完成回收订单：" + recycleOrder.getApplianceTypeName());
             pointsRecord.setBalance(user.getPoints());
@@ -568,24 +578,35 @@ public class RecycleOrderService {
         String today = DateUtil.format(LocalDateTime.now(), "yyyy-MM-dd");
         DailyRecycleStats stats = dailyRecycleStatsMapper.selectByDate(today);
 
+        // 订单字段兜底
+        BigDecimal weight = recycleOrder.getWeightActual() != null ? recycleOrder.getWeightActual() : BigDecimal.ZERO;
+        BigDecimal carbon = recycleOrder.getCarbonSaved() != null ? recycleOrder.getCarbonSaved() : BigDecimal.ZERO;
+        Integer points = recycleOrder.getPointsEarned() != null ? recycleOrder.getPointsEarned() : 0;
+
         if (stats == null) {
             stats = new DailyRecycleStats();
             stats.setStatDate(java.time.LocalDate.now());
             stats.setTotalOrders(1);
             stats.setCompletedOrders(1);
-            stats.setTotalWeight(recycleOrder.getWeightActual() != null ? recycleOrder.getWeightActual() : BigDecimal.ZERO);
-            stats.setTotalCarbonSaved(recycleOrder.getCarbonSaved());
-            stats.setTotalPointsGiven(recycleOrder.getPointsEarned());
+            stats.setTotalWeight(weight);
+            stats.setTotalCarbonSaved(carbon);
+            stats.setTotalPointsGiven(points);
             stats.setActiveUsers(1);
             stats.setActiveCollectors(1);
             dailyRecycleStatsMapper.insert(stats);
         } else {
-            stats.setTotalOrders(stats.getTotalOrders() + 1);
-            stats.setCompletedOrders(stats.getCompletedOrders() + 1);
-            stats.setTotalWeight(stats.getTotalWeight().add(
-                    recycleOrder.getWeightActual() != null ? recycleOrder.getWeightActual() : BigDecimal.ZERO));
-            stats.setTotalCarbonSaved(stats.getTotalCarbonSaved().add(recycleOrder.getCarbonSaved()));
-            stats.setTotalPointsGiven(stats.getTotalPointsGiven() + recycleOrder.getPointsEarned());
+            // 已有记录字段兜底
+            Integer totalOrders = stats.getTotalOrders() != null ? stats.getTotalOrders() : 0;
+            Integer completedOrders = stats.getCompletedOrders() != null ? stats.getCompletedOrders() : 0;
+            BigDecimal totalWeight = stats.getTotalWeight() != null ? stats.getTotalWeight() : BigDecimal.ZERO;
+            BigDecimal totalCarbon = stats.getTotalCarbonSaved() != null ? stats.getTotalCarbonSaved() : BigDecimal.ZERO;
+            Integer totalPoints = stats.getTotalPointsGiven() != null ? stats.getTotalPointsGiven() : 0;
+
+            stats.setTotalOrders(totalOrders + 1);
+            stats.setCompletedOrders(completedOrders + 1);
+            stats.setTotalWeight(totalWeight.add(weight));
+            stats.setTotalCarbonSaved(totalCarbon.add(carbon));
+            stats.setTotalPointsGiven(totalPoints + points);
             dailyRecycleStatsMapper.updateById(stats);
         }
     }

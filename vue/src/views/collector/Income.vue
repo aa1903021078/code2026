@@ -52,8 +52,8 @@
         <div class="card-header">
           <span>📈 近7日收入趋势</span>
           <el-radio-group v-model="chartType" size="small">
-            <el-radio-button label="income">收入</el-radio-button>
-            <el-radio-button label="count">单量</el-radio-button>
+            <el-radio-button value="income">收入</el-radio-button>
+            <el-radio-button value="count">单量</el-radio-button>
           </el-radio-group>
         </div>
       </template>
