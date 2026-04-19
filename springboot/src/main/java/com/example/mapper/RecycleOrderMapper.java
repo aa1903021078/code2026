@@ -41,6 +41,8 @@ public interface RecycleOrderMapper {
 
     BigDecimal sumTotalWeight();
 
+    int countActiveUsers();
+
     BigDecimal sumTotalCarbonSaved();
 
 

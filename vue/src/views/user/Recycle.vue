@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="recycle-page">
     <div class="page-header">
       <h2>预约上门回收</h2>
@@ -428,11 +428,11 @@ const loadTypes = async () => {
   try {
     const res = await request.get('/applianceType/selectEnabled')
     if (res.code === '200') {
-      typeList.value = res.data || []
+      typeList.value = res || []
     } else if (Array.isArray(res)) {
       typeList.value = res
-    } else if (res.data && Array.isArray(res.data)) {
-      typeList.value = res.data
+    } else if (res && Array.isArray(res)) {
+      typeList.value = res
     } else {
       typeList.value = []
     }
@@ -473,12 +473,12 @@ const loadAddresses = async () => {
 
     // 修复：更健壮的数据处理逻辑
     let list = []
-    if (res?.code === '200' && Array.isArray(res.data)) {
-      list = res.data
+    if (res?.code === '200' && Array.isArray(res)) {
+      list = res
     } else if (Array.isArray(res)) {
       list = res
-    } else if (res?.data && Array.isArray(res.data)) {
-      list = res.data
+    } else if (res && Array.isArray(res)) {
+      list = res
     } else {
       console.warn('[RecyclePage] API返回数据格式异常:', res)
       list = []
@@ -512,7 +512,7 @@ const disabledDate = (time) => {
 }
 
 const handleUploadSuccess = (res) => {
-  form.applianceImgs = res.data || res
+  form.applianceImgs = res || res
 }
 
 // 修复：强化地址添加成功后的处理

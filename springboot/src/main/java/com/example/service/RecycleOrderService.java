@@ -601,6 +601,7 @@ public class RecycleOrderService {
         stats.put("completedOrders", recycleOrderMapper.countByStatus(4));
         stats.put("totalWeight", recycleOrderMapper.sumTotalWeight());
         stats.put("totalCarbonSaved", recycleOrderMapper.sumTotalCarbonSaved());
+        stats.put("activeUsers", recycleOrderMapper.countActiveUsers());
         return stats;
     }
 }

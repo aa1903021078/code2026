@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="appointment-container">
     <el-card shadow="hover" class="appointment-card">
       <template #header>
@@ -172,7 +172,7 @@ const rules = {
 const loadApplianceTypes = async () => {
   const res = await request.get('/recycle/applianceTypes')
   if (res.code === '200') {
-    applianceTypes.value = res.data
+    applianceTypes.value = res
   }
 }
 
@@ -180,7 +180,7 @@ const loadApplianceTypes = async () => {
 const loadAddresses = async () => {
   const res = await request.get('/recycle/addresses')
   if (res.code === '200') {
-    addresses.value = res.data
+    addresses.value = res
     if (addresses.value.length === 0) {
       ElMessage.warning('请先添加回收地址')
       setTimeout(() => router.push('/front/address'), 1500)

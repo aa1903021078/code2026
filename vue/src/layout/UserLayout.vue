@@ -86,8 +86,8 @@ const totalCarbon = ref(0)
 onMounted(async () => {
   try {
     const res = await request.get('/recycleOrder/statistics')
-    totalWeight.value = res.totalWeight || 0
-    totalCarbon.value = res.totalCarbonSaved || 0
+    totalWeight.value = res?.totalWeight || 0
+    totalCarbon.value = res?.totalCarbonSaved || 0
   } catch (e) {}
 })
 

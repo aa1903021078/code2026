@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="home-container">
     <!-- 欢迎区域 -->
     <div class="welcome-section">
@@ -106,7 +106,7 @@ const loadLatestOrders = async () => {
   try {
     const res = await request.get('/recycle/orders')
     if (res.code === '200') {
-      latestOrders.value = res.data.slice(0, 5) // 只显示最新5条
+      latestOrders.value = res.slice(0, 5) // 只显示最新5条
     }
   } catch (error) {
     console.error(error)

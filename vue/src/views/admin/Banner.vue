@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="banner-management">
     <!-- 搜索区域 -->
     <div class="search-bar">
@@ -310,7 +310,7 @@ const beforeUpload = (file) => {
 const handleUploadSuccess = (res) => {
   if (res.code === '200' || res.code === 200) {
     // 后端返回完整的下载URL：http://localhost:9090/files/download/xxx.jpg
-    formData.imageUrl = res.data
+    formData.imageUrl = res
     ElMessage.success('图片上传成功')
   } else {
     ElMessage.error(res.msg || '上传失败')
@@ -340,8 +340,8 @@ const loadData = async () => {
 
     const res = await request.get('/banner/selectPage', { params })
     if (res.code === '200' || res.code === 200) {
-      tableData.value = res.data.list
-      total.value = res.data.total
+      tableData.value = res.list
+      total.value = res.total
     } else {
       ElMessage.error(res.msg || '加载失败')
     }

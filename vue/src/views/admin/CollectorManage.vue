@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="collector-manage" style="padding: 20px;">
     <!-- 搜索栏 -->
     <div class="search">
@@ -404,8 +404,8 @@ const loadData = async (showLoading = true) => {
     })
 
     if (res.code === '200' || res.code === 200) {
-      const list = res.data?.list || res.data?.records || res.data?.rows || res.data || []
-      const totalCount = res.data?.total || res.data?.totalCount || list.length
+      const list = res?.list || res?.records || res?.rows || res || []
+      const totalCount = res?.total || res?.totalCount || list.length
 
       collectorList.value = list.map(item => ({
         ...item,
@@ -479,7 +479,7 @@ const refreshRowData = async (id) => {
       const index = collectorList.value.findIndex(item => item.id === id)
       if (index !== -1) {
         collectorList.value[index] = {
-          ...res.data,
+          ...res,
           statusLoading: false
         }
       }
@@ -564,7 +564,7 @@ const handleView = async (row) => {
     // 调用后端接口获取最新数据
     const res = await request.get(`/collector/selectById/${row.id}`)
     if (res.code === '200' || res.code === 200) {
-      currentRow.value = res.data
+      currentRow.value = res
     } else {
       // 如果接口调用失败，使用列表中的数据
       currentRow.value = JSON.parse(JSON.stringify(row))

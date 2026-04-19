@@ -48,6 +48,10 @@ request.interceptors.response.use(
             // 跳转到登录页
             router.push("/login")
         }
+        // 请求成功时直接返回 data，方便页面使用
+        if (res.code === '200') {
+            return res.data;
+        }
         return res;
     },
         error => {

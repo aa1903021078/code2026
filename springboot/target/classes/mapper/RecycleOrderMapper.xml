@@ -104,6 +104,10 @@
         select coalesce(sum(carbon_saved), 0) from recycle_order where status = 4
     </select>
 
+    <select id="countActiveUsers" resultType="java.lang.Integer">
+        select count(distinct user_id) from recycle_order
+    </select>
+
     <select id="selectApplianceTypeStats" resultType="java.util.HashMap">
         select appliance_type_name as name, count(*) as count, sum(weight_actual) as weight
         from recycle_order where status = 4 group by appliance_type_id

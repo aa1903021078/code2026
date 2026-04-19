@@ -70,7 +70,7 @@
       <div class="info-block">
         <h3 class="section-title">
           📢 最新公告
-          <router-link to="/notice" class="more">查看更多 →</router-link>
+          <router-link to="/user/notice" class="more">查看更多 →</router-link>
         </h3>
         <div class="notice-list">
           <div
@@ -120,17 +120,18 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import {createRouter as $router, useRouter} from 'vue-router'
+import {useRouter} from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 
 const router = useRouter()
 
-const banners = [
+const defaultBanners = [
   { title: '让废旧家电变废为宝', subtitle: '专业回收，环保处理，积分奖励', bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', icon: '🌍' },
   { title: '预约上门，快速响应', subtitle: '30分钟响应，2小时上门', bg: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', icon: '🚚' },
   { title: '积分兑换，好礼不停', subtitle: '回收得积分，兑换精美礼品', bg: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', icon: '🎁' }
 ]
+const banners = ref(defaultBanners)
 
 const stats = ref({
   totalOrders: 0,
@@ -149,22 +150,44 @@ const newsList = [
 ]
 
 onMounted(() => {
+  loadBanners()
   loadStats()
   loadNotices()
   loadCategories()
 })
 
+const loadBanners = async () => {
+  try {
+    const res = await request.get('/banner/selectPublished')
+    if (res && res.length > 0) {
+      banners.value = res.map(b => ({
+        title: b.title,
+        subtitle: b.subtitle,
+        bg: b.bgColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        icon: b.icon || '🌍'
+      }))
+    }
+  } catch (e) {}
+}
+
 const loadStats = async () => {
   try {
     const res = await request.get('/recycleOrder/statistics')
-    stats.value = res
+    if (res) {
+      stats.value = {
+        totalOrders: res.totalOrders || 0,
+        totalWeight: res.totalWeight || 0,
+        totalCarbon: res.totalCarbonSaved || 0,
+        activeUsers: res.activeUsers || 0
+      }
+    }
   } catch (e) {}
 }
 
 const loadNotices = async () => {
   try {
     const res = await request.get('/notice/selectPublished')
-    notices.value = res.slice(0, 5).map(n => ({
+    notices.value = (res || []).slice(0, 5).map(n => ({
       ...n,
       typeName: n.type === 1 ? '活动' : n.type === 2 ? '政策' : n.type === 3 ? '知识' : '公告'
     }))
@@ -174,7 +197,7 @@ const loadNotices = async () => {
 const loadCategories = async () => {
   try {
     const res = await request.get('/applianceType/selectEnabled')
-    categories.value = res.slice(0, 8)
+    categories.value = (res || []).slice(0, 8)
   } catch (e) {}
 }
 

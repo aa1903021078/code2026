@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="points-mall-page">
     <!-- 头部积分信息 -->
     <div class="mall-header">
@@ -314,8 +314,8 @@ const loadUserPoints = async () => {
     const res = await request.get(`/user/selectById/${userId}`)
     console.log('后端返回:', res)
 
-    if (res?.data) {
-      const newPoints = res.data.points || 0
+    if (res) {
+      const newPoints = res.points || 0
       userPoints.value = newPoints
       console.log('最新积分:', newPoints)
 
@@ -341,7 +341,7 @@ const loadUserPoints = async () => {
 const loadAvailableGoods = async () => {
   try {
     const res = await request.get('/pointsGoods/selectAll')
-    const list = res?.data || []
+    const list = res || []
     goodsList.value = list.filter(item => item.status === 1 && item.stock > 0)
   } catch (error) {
     console.error('加载商品失败', error)
@@ -356,7 +356,7 @@ const loadUserDefaultAddress = async () => {
     if (!userId) return
 
     const res = await request.get(`/userAddress/selectDefault/${userId}`)
-    userAddress.value = res?.data || {}
+    userAddress.value = res || {}
   } catch (error) {
     console.log('获取默认地址失败', error)
     userAddress.value = {}
@@ -369,7 +369,7 @@ const loadUserAddressList = async () => {
     if (!userId) return
 
     const res = await request.get(`/userAddress/selectByUser/${userId}`)
-    addressList.value = res?.data || []
+    addressList.value = res || []
   } catch (error) {
     console.error('获取地址列表失败', error)
     addressList.value = []
@@ -445,7 +445,7 @@ const showExchangeRecords = async () => {
     const res = await request.get('/pointsExchange/selectPage', {
       params: { pageNum: 1, pageSize: 50 }
     })
-    exchangeRecords.value = res?.data?.list || []
+    exchangeRecords.value = res?.list || []
   } catch (error) {
     console.error('加载记录失败', error)
     exchangeRecords.value = []

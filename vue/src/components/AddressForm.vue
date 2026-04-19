@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="address-form">
     <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
 
@@ -978,9 +978,9 @@ const submit = async () => {
 
     const res = await request.post('/userAddress/add', submitData)
 
-    if (res?.code === '200' || res?.data?.id || res?.id) {
+    if (res?.code === '200' || res?.id || res?.id) {
       ElMessage.success('地址添加成功')
-      emit('success', res.data || res)
+      emit('success', res || res)
     } else {
       throw new Error(res?.msg || '添加失败')
     }

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="dispatch-container">
     <!-- 顶部统计栏 -->
     <el-row :gutter="20" class="stats-bar">
@@ -302,7 +302,7 @@ const loadPendingOrders = async () => {
   loading.value = true
   try {
     const res = await request.get('/recycleOrder/selectPendingDispatch')
-    pendingOrders.value = res.data || []
+    pendingOrders.value = res || []
     stats.pendingCount = pendingOrders.value.length
   } catch (error) {
     ElMessage.error('获取订单列表失败')
@@ -323,7 +323,7 @@ const selectOrder = async (order) => {
         radius: 5000
       }
     })
-    nearbyCollectors.value = res.data || []
+    nearbyCollectors.value = res || []
   } catch (error) {
     console.error('获取附近回收员失败:', error)
     nearbyCollectors.value = []
@@ -382,7 +382,7 @@ const openManualDispatch = async (order) => {
         radius: 10000  // 手动派单范围扩大到10公里
       }
     })
-    availableCollectors.value = res.data || []
+    availableCollectors.value = res || []
   } catch (error) {
     console.error('获取可用回收员失败:', error)
     availableCollectors.value = []

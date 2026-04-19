@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="collector-audit">
     <div class="page-header">
       <h2>资质审核</h2>
@@ -97,7 +97,7 @@ const fetchCollectors = async () => {
 
     // 关键修复：使用 == 代替 ===，兼容字符串 '200' 和数字 200
     if (res.code == 200) {
-      collectors.value = res.data || []
+      collectors.value = res || []
       console.log('数据赋值成功:', collectors.value)
     } else {
       ElMessage.warning(res.msg || '获取数据失败')

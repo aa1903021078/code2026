@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="collector-register-page">
     <div class="page-header">
       <el-icon @click="$router.back()"><ArrowLeft /></el-icon>
@@ -286,9 +286,9 @@ const customUpload = async (options, type) => {
 const handleIdCardSuccess = (res, type) => {
   if (res.code === '200') {
     if (type === 'front') {
-      form.idCardFront = res.data
+      form.idCardFront = res
     } else {
-      form.idCardBack = res.data
+      form.idCardBack = res
     }
     ElMessage.success('上传成功')
   } else {

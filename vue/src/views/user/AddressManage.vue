@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="address-book">
     <!-- 简洁头部 -->
     <div class="book-header">
@@ -149,12 +149,12 @@ const loadAddresses = async () => {
   try {
     const res = await request.get(`/userAddress/selectByUser/${user.id}`)
     let addressList = []
-    if (res.code === '200' && Array.isArray(res.data)) {
-      addressList = res.data
+    if (res.code === '200' && Array.isArray(res)) {
+      addressList = res
     } else if (Array.isArray(res)) {
       addressList = res
-    } else if (res.data && Array.isArray(res.data)) {
-      addressList = res.data
+    } else if (res && Array.isArray(res)) {
+      addressList = res
     }
     addresses.value = normalizeAddressData(addressList)
   } catch (e) {

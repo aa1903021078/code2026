@@ -70,7 +70,7 @@ const loadNotices = async () => {
   loading.value = true
   try {
     const res = await request.get('/notice/selectPublished', { params: { type: noticeType.value } })
-    notices.value = res
+    notices.value = res || []
   } catch (e) {}
   loading.value = false
 }
@@ -94,7 +94,7 @@ const viewDetail = async (notice) => {
   detailVisible.value = true
   // 增加阅读量
   try {
-    await request.put(`/notice/incrementView/${notice.id}`)
+    await request.put(`/notice/increaseView/${notice.id}`)
   } catch (e) {}
 }
 </script>

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="box" style="padding: 20px;">
     <!-- 搜索栏 -->
     <div class="search">
@@ -410,8 +410,8 @@ const loadData = async () => {
       }
     })
     if (res.code === '200') {
-      dataList.value = res.data?.list || []
-      total.value = res.data?.total || 0
+      dataList.value = res?.list || []
+      total.value = res?.total || 0
     } else {
       ElMessage.error(res.msg || '获取数据失败')
     }

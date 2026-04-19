@@ -371,7 +371,7 @@
               <template #header>
                 <div class="activity-header">
                   <span>📝 最近动态</span>
-                  <el-link type="primary" :underline="false">查看全部</el-link>
+                  <el-link type="primary" :underline="false" @click="$router.push('/user/orderList')">查看全部</el-link>
                 </div>
               </template>
               <el-timeline>

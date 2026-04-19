@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="front-container" style="width: 40%">
     <div class="card" style="padding: 20px; ">
       <div style="font-size: 20px; margin-bottom: 20px; text-align: center;">个人信息页面</div>
@@ -55,16 +55,16 @@ const data = reactive({
 
 const loadUser = () => {
   request.get('/user/selectById/' + data.user.id).then(res => {
-    data.user = res.data
+    data.user = res
     //存储最新的用户信息
-    localStorage.setItem('system-user', JSON.stringify(res.data))
+    localStorage.setItem('system-user', JSON.stringify(res))
     emit('updateUser')  //发射信息，将存储后的信息直接发射更换
   })
 }
 loadUser()
 
 const handleFileUpload = (res) => {
-  data.user.avatar = res.data
+  data.user.avatar = res
 }
 
 /**  更新*/

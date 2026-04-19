@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="order-center-page">
     <!-- 页面标题区 -->
     <div class="page-header">
@@ -607,7 +607,7 @@ const loadHallData = async () => {
   try {
     const res = await request.get('/recycleOrder/selectByStatus/0')
     if (res.code === '200' || res.code === 200) {
-      hallList.value = (res.data || []).map(item => ({ ...item, _grabbing: false }))
+      hallList.value = (res || []).map(item => ({ ...item, _grabbing: false }))
       stats.hallCount = hallList.value.length
       tabs.value[0].count = stats.hallCount
       applyHallFilter()
@@ -626,7 +626,7 @@ const loadMyOrders = async () => {
   try {
     const res = await request.get(`/recycleOrder/selectByCollector/${user.value.id}`)
     if (res.code === '200' || res.code === 200) {
-      myOrders.value = res.data || []
+      myOrders.value = res || []
 
       // 更新统计
       stats.pendingCount = myOrders.value.filter(o => o.status === 1).length

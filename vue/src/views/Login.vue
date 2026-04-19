@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="login-page">
     <div class="login-container">
       <!-- 左侧品牌区域 -->
@@ -279,8 +279,8 @@ const handleLogin = async () => {
       router.push('/collector')
     }
 
-    localStorage.setItem('token', res.data?.token || res.token || 'token')
-    localStorage.setItem('user', JSON.stringify(res.data))
+    localStorage.setItem('token', res?.token || res.token || 'token')
+    localStorage.setItem('user', JSON.stringify(res))
 
     if (rememberMe.value) {
       localStorage.setItem('remember', JSON.stringify(form))
@@ -298,8 +298,8 @@ const handleAdminLogin = async () => {
   loading.value = true
   try {
     const res = await adminApi.login({ ...adminForm, role: '管理员' })
-    localStorage.setItem('token', res.data?.token || res.token || 'token')
-    localStorage.setItem('user', JSON.stringify(res.data))
+    localStorage.setItem('token', res?.token || res.token || 'token')
+    localStorage.setItem('user', JSON.stringify(res))
     localStorage.setItem('role', '管理员')
     ElMessage.success('管理员登录成功')
     router.push('/admin')

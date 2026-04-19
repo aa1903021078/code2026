@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="eco-platform">
     <!-- 顶部标题栏 -->
     <header class="platform-header">
@@ -272,7 +272,7 @@ const fetchData = async () => {
 
     let data = []
     if (Array.isArray(res)) data = res
-    else if (res.data && Array.isArray(res.data)) data = res.data
+    else if (res && Array.isArray(res)) data = res
 
     rankList.value = normalizeData(data)
     updateMyRank()

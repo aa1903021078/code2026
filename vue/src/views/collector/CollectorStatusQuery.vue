@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="status-query-page">
     <div class="page-header">
       <el-icon @click="$router.back()"><ArrowLeft /></el-icon>
@@ -164,7 +164,7 @@ const queryStatus = async () => {
   try {
     const res = await collectorApi.queryStatus(queryForm.phone, queryForm.idCard)
     if (res.code === '200') {
-      result.value = res.data
+      result.value = res
     } else {
       ElMessage.error(res.msg || '查询失败')
     }

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="order-list-page">
     <!-- 页面头部 -->
     <div class="page-header">
@@ -445,7 +445,7 @@ const loadOrders = async () => {
   loading.value = true
   try {
     const res = await request.get(`/recycleOrder/selectByUser/${user.value.id}`)
-    let list = res.data || res || []
+    let list = res || res || []
 
     // 更新各状态数量
     tabs.forEach(tab => {
@@ -479,7 +479,7 @@ const loadOrders = async () => {
 const loadStats = async () => {
   try {
     const res = await request.get(`/recycleOrder/selectByUser/${user.value.id}`)
-    const list = res.data || res || []
+    const list = res || res || []
 
     // 筛选出已完成的订单（status === 4）
     const completedOrders = list.filter(o => o.status === 4)

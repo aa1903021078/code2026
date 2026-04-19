@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="user-manage">
     <!-- 搜索区域 -->
     <div class="search-section">
@@ -258,7 +258,7 @@ const loadData = async () => {
     const res = await request.get('/user/selectPage', { params })
 
     if (res.code === '200' || res.code === 200) {
-      const pageData = res.data
+      const pageData = res
 
       if (pageData && pageData.list) {
         const list = Array.isArray(pageData.list) ? pageData.list : []

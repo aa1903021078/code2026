@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="points-manage">
     <el-tabs v-model="activeTab" type="border-card">
       <!-- 积分商品管理 -->
@@ -291,8 +291,8 @@ const loadGoods = async () => {
   loading.value = true
   try {
     const res = await request.get('/pointsGoods/selectAll')
-    // 关键修复：使用 res.data 而不是 res
-    goodsList.value = res?.data || []
+    // 关键修复：使用 res 而不是 res
+    goodsList.value = res || []
   } catch (error) {
     console.error('加载商品失败', error)
     goodsList.value = []
@@ -420,9 +420,9 @@ const loadRecords = async () => {
     }
 
     const res = await request.get('/pointsExchange/selectPage', {params})
-    // 关键修复：使用 res.data.list 或 res.data
-    exchangeRecords.value = res?.data?.list || res?.data || []
-    total.value = res?.data?.total || 0
+    // 关键修复：使用 res.list 或 res
+    exchangeRecords.value = res?.list || res || []
+    total.value = res?.total || 0
   } catch (error) {
     console.error('加载兑换记录失败', error)
     exchangeRecords.value = []

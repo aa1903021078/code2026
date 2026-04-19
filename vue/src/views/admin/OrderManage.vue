@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="order-manage-page">
     <!-- 页面标题区 -->
     <div class="page-header">
@@ -656,8 +656,8 @@ const loadData = async () => {
     const res = await request.get('/recycleOrder/selectPage', {params})
 
     if (res.code === '200' || res.code === 200) {
-      allOrders.value = res.list || res.data?.list || []
-      total.value = res.total || res.data?.total || 0
+      allOrders.value = res.list || res?.list || []
+      total.value = res.total || res?.total || 0
 
       // 更新统计
       updateStats()
@@ -697,7 +697,7 @@ const loadCollectors = async () => {
   try {
     const res = await request.get('/collector/selectAll')
     if (res.code === '200' || res.code === 200) {
-      collectors.value = res.data || []
+      collectors.value = res || []
     }
   } catch (error) {
     console.error('加载回收员失败:', error)
@@ -749,8 +749,8 @@ const viewDetail = async (order) => {
   try {
     const res = await request.get(`/recycleOrder/selectById/${order.id}`)
 
-    if ((res.code === '200' || res.code === 200) && res.data) {
-      orderData = {...orderData, ...res.data}
+    if ((res.code === '200' || res.code === 200) && res) {
+      orderData = {...orderData, ...res}
     }
 
     // 如果有 collectorId 但没有名字，查询回收员信息
@@ -760,8 +760,8 @@ const viewDetail = async (order) => {
       try {
         const collectorRes = await request.get(`/collector/selectById/${collectorId}`)
 
-        if ((collectorRes.code === '200' || collectorRes.code === 200) && collectorRes.data) {
-          const collector = collectorRes.data
+        if ((collectorRes.code === '200' || collectorRes.code === 200) && collectorres) {
+          const collector = collectorres
           orderData.collectorName = collector.name || collector.username || '未知'
           orderData.collectorPhone = collector.phone || collector.tel || '-'
           orderData.collector = collector
