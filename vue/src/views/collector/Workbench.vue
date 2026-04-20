@@ -180,11 +180,27 @@ onMounted(() => {
   loadStats()
   loadOrders()
   timer.value = setInterval(loadOrders, 10000) // 每10秒刷新
+  reportLocation() // 进入工作台时自动上报位置
 })
 
 onUnmounted(() => {
   clearInterval(timer.value)
 })
+
+// 上报回收员当前位置到后端，供智能派单距离计算
+const reportLocation = () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        request.put('/collector/updateLocation', null, {
+          params: { id: user.id, lat: pos.coords.latitude, lng: pos.coords.longitude }
+        }).catch(() => {})
+      },
+      () => {}, // 定位失败静默处理
+      { enableHighAccuracy: true, timeout: 5000 }
+    )
+  }
+}
 
 const loadStats = async () => {
   try {

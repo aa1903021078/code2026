@@ -100,6 +100,9 @@ import {
 } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import regionData from '@/assets/region-data.json'
+const props = defineProps({
+  editData: { type: Object, default: null }
+})
 const emit = defineEmits(['success', 'cancel'])
 const formRef = ref()
 const loading = ref(false)
@@ -144,6 +147,27 @@ const rules = {
   latitude: [{ required: true, message: '请在地图上选择位置', trigger: 'change', type: 'number' }]
 }
 onMounted(() => {
+  if (props.editData) {
+    const d = props.editData
+    Object.assign(form, {
+      id: d.id,
+      userId: d.userId,
+      contactName: d.contactName || '',
+      contactPhone: d.contactPhone || '',
+      province: d.province || '',
+      city: d.city || '',
+      district: d.district || '',
+      community: d.community || '',
+      detailAddress: d.detailAddress || '',
+      latitude: d.latitude || null,
+      longitude: d.longitude || null,
+      buildingType: d.buildingType !== undefined ? d.buildingType : 1,
+      floor: d.floor || 1,
+      isDefault: d.isDefault || 0,
+      region: (d.province && d.city && d.district) ? [d.province, d.city, d.district] : []
+    })
+    cascaderKey.value++
+  }
   nextTick(() => { initMap() })
   document.addEventListener('click', handleClickOutside)
 })
@@ -168,7 +192,16 @@ const initMap = () => {
     placeMarker(evt.latLng)
     reverseGeocode(evt.latLng)
   })
-  getCurrentLocation()
+  // 编辑模式：定位到已有坐标
+  if (form.latitude && form.longitude) {
+    const latLng = new TMap.LatLng(form.latitude, form.longitude)
+    map.setCenter(latLng)
+    map.setZoom(15)
+    placeMarker(latLng)
+    selectedAddress.value = { name: form.detailAddress || '', detail: `${form.province} ${form.city} ${form.district}` }
+  } else {
+    getCurrentLocation()
+  }
 }
 const placeMarker = (latLng) => {
   form.latitude = latLng.lat
@@ -297,10 +330,15 @@ const submit = async () => {
     form.userId = user.id
     const submitData = { ...form }
     delete submitData.region
-    const res = await request.post('/userAddress/add', submitData)
+    let res
+    if (props.editData && props.editData.id) {
+      res = await request.put('/userAddress/update', submitData)
+    } else {
+      res = await request.post('/userAddress/add', submitData)
+    }
     emit('success', res)
   } catch (error) {
-    ElMessage.error(error.message || '添加失败')
+    ElMessage.error(error.message || (props.editData ? '修改失败' : '添加失败'))
   } finally { loading.value = false }
 }
 const handleClickOutside = (e) => {

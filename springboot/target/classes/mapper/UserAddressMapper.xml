@@ -6,9 +6,9 @@
 
     <insert id="insert" parameterType="com.example.entity.UserAddress" useGeneratedKeys="true" keyProperty="id">
         insert into user_address (
-            user_id, contact_name, contact_phone, province, city, district, detail_address,
+            user_id, contact_name, contact_phone, province, city, district, community, detail_address,
             latitude, longitude, building_type, floor, is_default)
-        values (#{userId}, #{contactName}, #{contactPhone}, #{province}, #{city}, #{district}, #{detailAddress},
+        values (#{userId}, #{contactName}, #{contactPhone}, #{province}, #{city}, #{district}, #{community}, #{detailAddress},
                 #{latitude}, #{longitude}, #{buildingType}, #{floor}, #{isDefault})
     </insert>
 
@@ -24,6 +24,7 @@
             <if test="province != null">province = #{province},</if>
             <if test="city != null">city = #{city},</if>
             <if test="district != null">district = #{district},</if>
+            <if test="community != null">community = #{community},</if>
             <if test="detailAddress != null">detail_address = #{detailAddress},</if>
             <if test="latitude != null">latitude = #{latitude},</if>
             <if test="longitude != null">longitude = #{longitude},</if>

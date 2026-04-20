@@ -203,6 +203,15 @@ const ipLocate = (silent) => {
 const updateCollectorPos = (lat, lng, successMsg) => {
   collectorPos.lat = lat
   collectorPos.lng = lng
+
+  // 同步位置到后端数据库，供智能派单距离计算使用
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  if (user.id) {
+    request.put('/collector/updateLocation', null, {
+      params: { id: user.id, lat, lng }
+    }).catch(() => {})
+  }
+
   if (!map || !collectorMarker) return
   const latLng = new TMap.LatLng(lat, lng)
   collectorMarker.setGeometries([{

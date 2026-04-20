@@ -29,16 +29,12 @@
           <div class="stat-label">服务评分</div>
           <div class="stat-value">{{ formatScore(form.rating) }}</div>
         </div>
-        <div class="hero-stat-card">
-          <div class="stat-label">每日上限</div>
-          <div class="stat-value">{{ safeNumber(form.maxDailyOrders) }}<span class="stat-unit">单</span></div>
-        </div>
       </div>
     </div>
 
     <div class="profile-content">
-      <el-row :gutter="20" class="overview-row">
-        <el-col :xs="24" :sm="24" :md="7" :lg="6">
+      <el-row :gutter="24" class="content-grid">
+        <el-col :xs="24" :sm="24" :md="8" :lg="6" class="content-col">
           <el-card class="profile-card sidebar-card" shadow="hover">
             <div class="profile-summary">
               <div class="avatar-ring">
@@ -60,30 +56,7 @@
               <p class="collector-role">社区回收服务人员</p>
 
               <div class="summary-tags">
-                <el-tag :type="workStatusMeta.type" round>{{ workStatusMeta.text }}</el-tag>
                 <el-tag :type="auditStatusMeta.type" plain round>{{ auditStatusMeta.text }}</el-tag>
-              </div>
-
-              <div class="rating-box">
-                <span class="rating-label">服务评分</span>
-                <div class="rating-content">
-                  <el-rate :model-value="Number(form.rating) || 0" disabled show-score text-color="#f59e0b" />
-                </div>
-              </div>
-            </div>
-
-            <div class="mini-stats">
-              <div class="mini-stat-item">
-                <div class="mini-stat-value">{{ safeNumber(form.todayOrderCount) }}</div>
-                <div class="mini-stat-label">今日接单</div>
-              </div>
-              <div class="mini-stat-item">
-                <div class="mini-stat-value">{{ safeNumber(form.orderCount) }}</div>
-                <div class="mini-stat-label">累计接单</div>
-              </div>
-              <div class="mini-stat-item">
-                <div class="mini-stat-value">{{ safeNumber(form.maxDailyOrders) }}</div>
-                <div class="mini-stat-label">每日上限</div>
               </div>
             </div>
 
@@ -104,204 +77,196 @@
           </el-card>
         </el-col>
 
-        <el-col :xs="24" :sm="24" :md="17" :lg="18">
-          <el-card class="profile-card main-card" shadow="hover">
-            <div class="tabs-wrapper">
-              <div
-                class="tab-item"
-                :class="{ active: activeTab === 'profile' }"
-                @click="activeTab = 'profile'"
-              >
-                <el-icon><User /></el-icon>
-                <span>基本信息</span>
-              </div>
-              <div
-                class="tab-item"
-                :class="{ active: activeTab === 'password' }"
-                @click="activeTab = 'password'"
-              >
-                <el-icon><Lock /></el-icon>
-                <span>账号安全</span>
-              </div>
-            </div>
+        <el-col :xs="24" :sm="24" :md="16" :lg="18" class="content-col">
+          <div class="main-grid">
+            <div class="content-col grid-span-12">
+              <el-card class="profile-card main-card" shadow="hover">
+                <div class="tabs-wrapper">
+                  <div
+                    class="tab-item"
+                    :class="{ active: activeTab === 'profile' }"
+                    @click="activeTab = 'profile'"
+                  >
+                    <el-icon><User /></el-icon>
+                    <span>基本信息</span>
+                  </div>
+                  <div
+                    class="tab-item"
+                    :class="{ active: activeTab === 'password' }"
+                    @click="activeTab = 'password'"
+                  >
+                    <el-icon><Lock /></el-icon>
+                    <span>账号安全</span>
+                  </div>
+                </div>
 
-            <div v-show="activeTab === 'profile'" class="tab-panel">
-              <div class="section-intro">
-                <h3>资料设置</h3>
-                <p>完善联系信息和服务配置，便于系统智能派单与用户联系。</p>
-              </div>
+                <div v-show="activeTab === 'profile'" class="tab-panel">
+                  <div class="section-intro">
+                    <h3>资料设置</h3>
+                    <p>完善联系信息和服务配置，便于系统智能派单与用户联系。</p>
+                  </div>
 
-              <el-form
-                ref="profileFormRef"
-                :model="form"
-                :rules="profileRules"
-                label-position="top"
-                class="modern-form"
-              >
-                <el-row :gutter="20">
-                  <el-col :xs="24" :sm="12">
-                    <el-form-item label="用户名" prop="username">
-                      <el-input v-model="form.username" disabled>
-                        <template #prefix>
-                          <el-icon><User /></el-icon>
-                        </template>
-                      </el-input>
-                    </el-form-item>
-                  </el-col>
-                  <el-col :xs="24" :sm="12">
-                    <el-form-item label="真实姓名" prop="name">
-                      <el-input v-model="form.name" placeholder="请输入真实姓名">
-                        <template #prefix>
-                          <el-icon><UserFilled /></el-icon>
-                        </template>
-                      </el-input>
-                    </el-form-item>
-                  </el-col>
-                </el-row>
+                  <el-form
+                    ref="profileFormRef"
+                    :model="form"
+                    :rules="profileRules"
+                    label-width="96px"
+                    class="modern-form profile-grid-form"
+                  >
+                    <el-row :gutter="24" class="form-grid-row">
+                      <el-col :xs="24" :xl="12">
+                        <el-form-item label="用户名" prop="username">
+                          <el-input v-model="form.username" disabled>
+                            <template #prefix>
+                              <el-icon><User /></el-icon>
+                            </template>
+                          </el-input>
+                        </el-form-item>
+                      </el-col>
+                      <el-col :xs="24" :xl="12">
+                        <el-form-item label="真实姓名" prop="name">
+                          <el-input v-model="form.name" placeholder="请输入真实姓名">
+                            <template #prefix>
+                              <el-icon><UserFilled /></el-icon>
+                            </template>
+                          </el-input>
+                        </el-form-item>
+                      </el-col>
+                      <el-col :xs="24" :xl="12">
+                        <el-form-item label="手机号" prop="phone">
+                          <el-input v-model="form.phone" placeholder="请输入手机号" maxlength="11">
+                            <template #prefix>
+                              <el-icon><Iphone /></el-icon>
+                            </template>
+                          </el-input>
+                        </el-form-item>
+                      </el-col>
+                      <el-col :xs="24" :xl="12">
+                        <el-form-item label="每日接单上限" prop="maxDailyOrders">
+                          <el-input-number v-model="form.maxDailyOrders" :min="1" :max="50" class="full-width-number" />
+                        </el-form-item>
+                      </el-col>
+                      <el-col :span="24">
+                        <el-form-item label="工作区域" prop="serviceArea" class="full-row-item">
+                          <el-input
+                            v-model="form.serviceArea"
+                            type="textarea"
+                            :rows="4"
+                            resize="none"
+                            placeholder="请输入负责的社区/小区名称，多个用顿号分隔，如：阳光花园、翠苑小区"
+                           />
+                           <div class="field-tip">请填写负责的社区/小区名称，系统将按社区匹配派单。</div>
+                        </el-form-item>
+                      </el-col>
+                    </el-row>
 
-                <el-row :gutter="20">
-                  <el-col :xs="24" :sm="12">
-                    <el-form-item label="手机号" prop="phone">
-                      <el-input v-model="form.phone" placeholder="请输入手机号" maxlength="11">
-                        <template #prefix>
-                          <el-icon><Iphone /></el-icon>
-                        </template>
-                      </el-input>
-                    </el-form-item>
-                  </el-col>
-                  <el-col :xs="24" :sm="12">
-                    <el-form-item label="每日接单上限" prop="maxDailyOrders">
-                      <el-input-number v-model="form.maxDailyOrders" :min="1" :max="50" class="full-width-number" />
-                    </el-form-item>
-                  </el-col>
-                </el-row>
+                    <div class="form-actions">
+                      <el-button type="primary" size="large" :loading="saving" @click="saveProfile">
+                        保存修改
+                      </el-button>
+                    </div>
+                  </el-form>
+                </div>
 
-                <el-form-item label="工作区域" prop="serviceArea">
-                  <el-input
-                    v-model="form.serviceArea"
-                    type="textarea"
-                    :rows="4"
-                    resize="none"
-                    placeholder="例如：朝阳社区、幸福小区、人民路街道"
+                <div v-show="activeTab === 'password'" class="tab-panel">
+                  <div class="section-intro security-intro">
+                    <h3>账号安全</h3>
+                    <p>定期更新密码，保障账号与订单数据安全。</p>
+                  </div>
+
+                  <el-alert
+                    title="安全提示"
+                    description="建议新密码不少于 6 位，并避免与旧密码一致。"
+                    type="info"
+                    show-icon
+                    :closable="false"
+                    class="security-alert"
                   />
-                  <div class="field-tip">建议填写常驻服务片区，方便平台更精准派单。</div>
-                </el-form-item>
 
-                <div class="form-actions">
-                  <el-button type="primary" size="large" :loading="saving" @click="saveProfile">
-                    保存修改
-                  </el-button>
+                  <el-form
+                    ref="pwdFormRef"
+                    :model="pwdForm"
+                    :rules="pwdRules"
+                    label-position="top"
+                    class="modern-form password-form"
+                  >
+                    <el-form-item label="原密码" prop="oldPassword">
+                      <el-input v-model="pwdForm.oldPassword" type="password" show-password placeholder="请输入原密码" />
+                    </el-form-item>
+
+                    <el-form-item label="新密码" prop="newPassword">
+                      <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="请输入新密码" />
+                    </el-form-item>
+
+                    <el-form-item label="确认密码" prop="confirmPassword">
+                      <el-input v-model="pwdForm.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
+                    </el-form-item>
+
+                    <div class="form-actions">
+                      <el-button type="danger" size="large" :loading="changingPwd" @click="changePassword">
+                        修改密码
+                      </el-button>
+                    </div>
+                  </el-form>
                 </div>
-              </el-form>
+              </el-card>
             </div>
 
-            <div v-show="activeTab === 'password'" class="tab-panel">
-              <div class="section-intro security-intro">
-                <h3>账号安全</h3>
-                <p>定期更新密码，保障账号与订单数据安全。</p>
-              </div>
+            <div class="content-col grid-span-6">
+              <el-card class="profile-card detail-card" shadow="hover">
+                <template #header>
+                  <div class="card-header">账户状态</div>
+                </template>
 
-              <el-alert
-                title="安全提示"
-                description="建议新密码不少于 6 位，并避免与旧密码一致。"
-                type="info"
-                show-icon
-                :closable="false"
-                class="security-alert"
-              />
-
-              <el-form
-                ref="pwdFormRef"
-                :model="pwdForm"
-                :rules="pwdRules"
-                label-position="top"
-                class="modern-form password-form"
-              >
-                <el-form-item label="原密码" prop="oldPassword">
-                  <el-input v-model="pwdForm.oldPassword" type="password" show-password placeholder="请输入原密码" />
-                </el-form-item>
-
-                <el-form-item label="新密码" prop="newPassword">
-                  <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="请输入新密码" />
-                </el-form-item>
-
-                <el-form-item label="确认密码" prop="confirmPassword">
-                  <el-input v-model="pwdForm.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
-                </el-form-item>
-
-                <div class="form-actions">
-                  <el-button type="danger" size="large" :loading="changingPwd" @click="changePassword">
-                    修改密码
-                  </el-button>
+                <div class="detail-list">
+                  <div class="detail-item">
+                    <div>
+                      <div class="detail-label">审核状态</div>
+                      <div class="detail-desc">当前资质审核结果</div>
+                    </div>
+                    <el-tag :type="auditStatusMeta.type" round>{{ auditStatusMeta.text }}</el-tag>
+                  </div>
+                  <div class="detail-item">
+                    <div>
+                      <div class="detail-label">账户状态</div>
+                      <div class="detail-desc">是否可正常接收系统服务</div>
+                    </div>
+                    <span class="detail-value">{{ form.status === 0 ? '已禁用' : '正常' }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <div>
+                      <div class="detail-label">注册时间</div>
+                      <div class="detail-desc">加入平台的时间</div>
+                    </div>
+                    <span class="detail-value">{{ formatDateTime(form.createTime) || '-' }}</span>
+                  </div>
+                  <div v-if="form.auditStatus === 2 && form.rejectReason" class="reject-box">
+                    <div class="reject-title">审核说明</div>
+                    <div class="reject-text">{{ form.rejectReason }}</div>
+                  </div>
                 </div>
-              </el-form>
+              </el-card>
             </div>
-          </el-card>
-        </el-col>
-      </el-row>
 
-      <el-row :gutter="20" class="detail-row">
-        <el-col :xs="24" :sm="24" :md="12">
-          <el-card class="profile-card detail-card" shadow="hover">
-            <template #header>
-              <div class="card-header">账户状态</div>
-            </template>
+            <div class="content-col grid-span-6">
+              <el-card class="profile-card detail-card" shadow="hover">
+                <template #header>
+                  <div class="card-header">工作概览</div>
+                </template>
 
-            <div class="detail-list">
-              <div class="detail-item">
-                <div>
-                  <div class="detail-label">审核状态</div>
-                  <div class="detail-desc">当前资质审核结果</div>
+                <div class="work-grid compact-work-grid">
+                  <div class="work-card soft-yellow">
+                    <div class="work-card-title">每日接单上限</div>
+                    <div class="work-card-value">{{ safeNumber(form.maxDailyOrders) }}<span class="stat-unit">单</span></div>
+                  </div>
+                  <div class="work-card soft-purple work-card-wide">
+                    <div class="work-card-title">服务区域</div>
+                    <div class="work-card-value small">{{ serviceAreaText }}</div>
+                  </div>
                 </div>
-                <el-tag :type="auditStatusMeta.type" round>{{ auditStatusMeta.text }}</el-tag>
-              </div>
-              <div class="detail-item">
-                <div>
-                  <div class="detail-label">账户状态</div>
-                  <div class="detail-desc">是否可正常接收系统服务</div>
-                </div>
-                <span class="detail-value">{{ form.status === 0 ? '已禁用' : '正常' }}</span>
-              </div>
-              <div class="detail-item">
-                <div>
-                  <div class="detail-label">注册时间</div>
-                  <div class="detail-desc">加入平台的时间</div>
-                </div>
-                <span class="detail-value">{{ formatDateTime(form.createTime) || '-' }}</span>
-              </div>
-              <div v-if="form.auditStatus === 2 && form.rejectReason" class="reject-box">
-                <div class="reject-title">审核说明</div>
-                <div class="reject-text">{{ form.rejectReason }}</div>
-              </div>
+              </el-card>
             </div>
-          </el-card>
-        </el-col>
-
-        <el-col :xs="24" :sm="24" :md="12">
-          <el-card class="profile-card detail-card" shadow="hover">
-            <template #header>
-              <div class="card-header">工作概览</div>
-            </template>
-
-            <div class="work-grid">
-              <div class="work-card soft-green">
-                <div class="work-card-title">工作状态</div>
-                <div class="work-card-value">{{ workStatusMeta.text }}</div>
-              </div>
-              <div class="work-card soft-blue">
-                <div class="work-card-title">评分表现</div>
-                <div class="work-card-value">{{ formatScore(form.rating) }}</div>
-              </div>
-              <div class="work-card soft-yellow">
-                <div class="work-card-title">今日接单</div>
-                <div class="work-card-value">{{ safeNumber(form.todayOrderCount) }}</div>
-              </div>
-              <div class="work-card soft-purple">
-                <div class="work-card-title">服务区域</div>
-                <div class="work-card-value small">{{ serviceAreaText }}</div>
-              </div>
-            </div>
-          </el-card>
+          </div>
         </el-col>
       </el-row>
     </div>
@@ -512,12 +477,14 @@ const changePassword = async () => {
 
 .profile-hero {
   background: linear-gradient(135deg, #2f7a55 0%, #49a16b 100%);
-  padding: 32px 0 90px;
+  padding: 32px 24px 96px;
   color: #fff;
 }
 
 .hero-main {
   width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -544,9 +511,12 @@ const changePassword = async () => {
 
 .hero-stats {
   width: 100%;
+  max-width: 1440px;
   margin: 24px 0 0;
+  margin-left: auto;
+  margin-right: auto;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
 }
 
@@ -578,30 +548,49 @@ const changePassword = async () => {
 
 .profile-content {
   width: 100%;
-  margin: -58px 0 0;
-  padding: 0 0 28px;
+  max-width: 1440px;
+  margin: -58px auto 0;
+  padding: 0 24px 32px;
   position: relative;
   z-index: 1;
 }
 
-.overview-row {
-  margin-bottom: 20px;
+.content-grid {
+  row-gap: 24px;
+}
+
+.main-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.content-col {
+  display: flex;
+}
+
+.grid-span-12 {
+  grid-column: span 12;
+}
+
+.grid-span-6 {
+  grid-column: span 6;
 }
 
 .profile-card {
+  width: 100%;
+  height: 100%;
   border: none;
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
-.sidebar-card {
-  overflow: hidden;
-}
-
 .profile-summary {
-  padding: 28px 28px 22px;
+  padding: 0 0 20px;
   text-align: center;
   background: linear-gradient(180deg, #f6fff8 0%, #ffffff 52%);
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .avatar-ring {
@@ -676,50 +665,8 @@ const changePassword = async () => {
   margin-top: 16px;
 }
 
-.rating-box {
-  margin-top: 18px;
-  padding: 16px;
-  border-radius: 16px;
-  background: #ffffff;
-  border: 1px solid #eef2f7;
-
-  .rating-label {
-    display: block;
-    margin-bottom: 10px;
-    font-size: 13px;
-    color: #6b7280;
-  }
-}
-
-.mini-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  padding: 22px 24px;
-  border-top: 1px solid #f1f5f9;
-
-  .mini-stat-item {
-    padding: 14px 10px;
-    border-radius: 14px;
-    background: #f8fafc;
-    text-align: center;
-  }
-
-  .mini-stat-value {
-    font-size: 24px;
-    font-weight: 700;
-    color: #111827;
-  }
-
-  .mini-stat-label {
-    margin-top: 6px;
-    font-size: 12px;
-    color: #6b7280;
-  }
-}
-
 .summary-list {
-  padding: 0 24px 24px;
+  padding: 0;
 }
 
 .summary-item {
@@ -788,7 +735,7 @@ const changePassword = async () => {
 }
 
 .tab-panel {
-  padding: 6px 4px 2px;
+  padding: 4px 0 0;
 }
 
 .section-intro {
@@ -822,10 +769,16 @@ const changePassword = async () => {
   color: #94a3b8;
 }
 
+.form-grid-row {
+  row-gap: 4px;
+}
+
 .form-actions {
   margin-top: 28px;
   padding-top: 20px;
   border-top: 1px solid #eef2f7;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .password-form {
@@ -902,6 +855,10 @@ const changePassword = async () => {
   gap: 16px;
 }
 
+.compact-work-grid {
+  align-items: stretch;
+}
+
 .work-card {
   min-height: 120px;
   border-radius: 18px;
@@ -933,6 +890,10 @@ const changePassword = async () => {
   }
 }
 
+.work-card-wide {
+  grid-column: 1 / -1;
+}
+
 .full-width-number {
   width: 100%;
 }
@@ -941,14 +902,38 @@ const changePassword = async () => {
   padding: 24px;
 }
 
-:global(.sidebar-card > .el-card__body) {
-  padding: 0;
+:global(.detail-card > .el-card__header) {
+  padding: 24px 24px 0;
+  border-bottom: none;
 }
 
 :global(.modern-form .el-form-item__label) {
   font-weight: 600;
   color: #334155;
   padding-bottom: 8px;
+}
+
+:global(.profile-grid-form .el-form-item) {
+  margin-bottom: 20px;
+}
+
+:global(.profile-grid-form .el-form-item__content) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+:global(.profile-grid-form .el-form-item__label-wrap) {
+  margin-right: 12px;
+}
+
+:global(.profile-grid-form .el-form-item__label) {
+  padding-bottom: 0;
+  line-height: 40px;
+}
+
+:global(.profile-grid-form .full-row-item .el-form-item__content) {
+  min-width: 0;
 }
 
 :global(.modern-form .el-input__wrapper),
@@ -999,14 +984,27 @@ const changePassword = async () => {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-span-12,
+  .grid-span-6 {
+    grid-column: auto;
+  }
+
   .work-grid {
     grid-template-columns: 1fr;
+  }
+
+  .work-card-wide {
+    grid-column: auto;
   }
 }
 
 @media (max-width: 768px) {
   .profile-hero {
-    padding: 24px 0 72px;
+    padding: 24px 16px 72px;
   }
 
   .hero-main {
@@ -1024,11 +1022,7 @@ const changePassword = async () => {
 
   .profile-content {
     margin-top: -44px;
-    padding: 0 0 20px;
-  }
-
-  .mini-stats {
-    grid-template-columns: 1fr;
+    padding: 0 16px 24px;
   }
 
   .summary-item,
@@ -1049,6 +1043,19 @@ const changePassword = async () => {
 
   :global(.profile-card > .el-card__body) {
     padding: 18px;
+  }
+
+  :global(.detail-card > .el-card__header) {
+    padding: 18px 18px 0;
+  }
+
+  :global(.profile-grid-form .el-form-item__label-wrap) {
+    margin-right: 0;
+  }
+
+  :global(.profile-grid-form .el-form-item__label) {
+    line-height: 1.5;
+    padding-bottom: 8px;
   }
 }
 </style>

@@ -350,6 +350,44 @@ const formatDistance = (d) => {
   return Number.isFinite(n) ? n.toFixed(2) : d
 }
 
+const toNumber = (value) => {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
+const calcDistanceKm = (lat1, lng1, lat2, lng2) => {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+    * Math.sin(dLng / 2) * Math.sin(dLng / 2)
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+const enrichCollectorsDistance = (order, collectors) => {
+  const orderLat = toNumber(order?.addressLat)
+  const orderLng = toNumber(order?.addressLng)
+  if (orderLat == null || orderLng == null || !Array.isArray(collectors)) {
+    return Array.isArray(collectors) ? collectors : []
+  }
+
+  return collectors.map(collector => {
+    if (collector?.distance != null) {
+      return collector
+    }
+    const collectorLat = toNumber(collector?.locationLat)
+    const collectorLng = toNumber(collector?.locationLng)
+    if (collectorLat == null || collectorLng == null) {
+      return collector
+    }
+    return {
+      ...collector,
+      distance: calcDistanceKm(orderLat, orderLng, collectorLat, collectorLng)
+    }
+  })
+}
+
 const workStatusText = (s) => {
   if (s === 1) return '接单中'
   if (s === 2) return '忙碌'
@@ -368,7 +406,7 @@ const selectOrder = async (order) => {
         params: { lat: order.addressLat, lng: order.addressLng, radius: 5000 }
       })
       if (Array.isArray(res) && res.length > 0) {
-        nearbyCollectors.value = res
+        nearbyCollectors.value = enrichCollectorsDistance(order, res)
         return
       }
     } catch (error) {
@@ -379,7 +417,7 @@ const selectOrder = async (order) => {
   // 附近无人或无坐标，查询所有可用回收员
   try {
     const res = await request.get('/collector/selectAvailable')
-    nearbyCollectors.value = Array.isArray(res) ? res : []
+    nearbyCollectors.value = enrichCollectorsDistance(order, Array.isArray(res) ? res : [])
   } catch (error) {
     console.error('获取可用回收员失败:', error)
   }
@@ -389,7 +427,7 @@ const selectOrder = async (order) => {
 const handleAutoDispatch = async (order) => {
   try {
     await ElMessageBox.confirm(
-        `确定对订单 ${order.orderNo} 执行智能派单吗？系统将自动选择5公里内最近的可用回收员`,
+        `确定对订单 ${order.orderNo} 执行智能派单吗？系统仅会选择5公里内最近的可用回收员，超出范围的订单将保留待派单`,
         '确认智能派单',
         {
           confirmButtonText: '确认派单',
@@ -438,7 +476,7 @@ const openManualDispatch = async (order) => {
         params: { lat: order.addressLat, lng: order.addressLng, radius: 10000 }
       })
       if (Array.isArray(res) && res.length > 0) {
-        availableCollectors.value = res
+        availableCollectors.value = enrichCollectorsDistance(order, res)
         return
       }
     } catch (error) {
@@ -449,7 +487,7 @@ const openManualDispatch = async (order) => {
   // 附近无人或无坐标，查询所有可用回收员
   try {
     const res = await request.get('/collector/selectAvailable')
-    availableCollectors.value = Array.isArray(res) ? res : []
+    availableCollectors.value = enrichCollectorsDistance(order, Array.isArray(res) ? res : [])
     if (availableCollectors.value.length === 0) {
       ElMessage.warning('暂无可用回收员')
     }
@@ -506,7 +544,7 @@ const handleBatchDispatch = async () => {
   }
   try {
     await ElMessageBox.confirm(
-        `将对所有待派单订单（共 ${pendingOrders.value.length} 个）执行智能派单。\n用户指定回收员的订单将被跳过，需手动派单。`,
+        `将对所有待派单订单（共 ${pendingOrders.value.length} 个）执行智能派单。\n系统仅派发给5公里内的可用回收员；超出范围或用户指定回收员的订单将保留待派单，需手动处理。`,
         '确认一键智能派单',
         { confirmButtonText: '确认', cancelButtonText: '取消', type: 'warning' }
     )

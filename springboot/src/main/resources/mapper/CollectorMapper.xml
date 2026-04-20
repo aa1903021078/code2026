@@ -94,8 +94,8 @@
             limit 10
     </select>
 
-    <!-- 按区域+距离查询可用回收员 -->
-    <select id="selectNearbyByDistrict" resultType="com.example.entity.Collector">
+    <!-- 按社区+距离查询可用回收员 -->
+    <select id="selectNearbyByCommunity" resultType="com.example.entity.Collector">
         select *,
                (6371 * acos(cos(radians(#{lat})) * cos(radians(location_lat)) *
                             cos(radians(location_lng) - radians(#{lng})) + sin(radians(#{lat})) *
@@ -106,7 +106,7 @@
           and audit_status = 1
           and location_lat is not null
           and location_lng is not null
-          and FIND_IN_SET(#{district}, service_area)
+          and service_area LIKE CONCAT('%', #{community}, '%')
         having distance &lt;= #{radius} / 1000
         order by distance
             limit 10

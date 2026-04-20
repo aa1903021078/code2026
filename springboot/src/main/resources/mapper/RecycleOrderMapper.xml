@@ -4,6 +4,16 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.mapper.RecycleOrderMapper">
 
+    <sql id="orderWithCollectorColumns">
+        select r.*,
+               coalesce(nullif(c.name, ''), c.username) as collector_name,
+               c.phone as collector_phone,
+               c.location_lat as collector_lat,
+               c.location_lng as collector_lng
+        from recycle_order r
+        left join collector c on r.collector_id = c.id
+    </sql>
+
     <insert id="insert" parameterType="com.example.entity.RecycleOrder" useGeneratedKeys="true" keyProperty="id">
         insert into recycle_order (
             order_no, user_id, collector_id, preferred_collector_id, address_id, address_detail, community, address_lat, address_lng,
@@ -53,31 +63,38 @@
     </update>
 
     <select id="selectById" resultType="com.example.entity.RecycleOrder">
-        select * from recycle_order where id = #{id}
+        <include refid="orderWithCollectorColumns"/>
+        where r.id = #{id}
     </select>
 
     <select id="selectAll" resultType="com.example.entity.RecycleOrder">
-        select * from recycle_order
+        <include refid="orderWithCollectorColumns"/>
         <where>
-            <if test="userId != null">and user_id = #{userId}</if>
-            <if test="collectorId != null">and collector_id = #{collectorId}</if>
-            <if test="status != null">and status = #{status}</if>
-            <if test="orderNo != null">and order_no like concat('%', #{orderNo}, '%')</if>
-            <if test="contactPhone != null">and contact_phone = #{contactPhone}</if>
+            <if test="userId != null">and r.user_id = #{userId}</if>
+            <if test="collectorId != null">and r.collector_id = #{collectorId}</if>
+            <if test="status != null">and r.status = #{status}</if>
+            <if test="orderNo != null">and r.order_no like concat('%', #{orderNo}, '%')</if>
+            <if test="contactPhone != null">and r.contact_phone = #{contactPhone}</if>
         </where>
-        order by create_time desc
+        order by r.create_time desc
     </select>
 
     <select id="selectByUser" resultType="com.example.entity.RecycleOrder">
-        select * from recycle_order where user_id = #{userId} order by create_time desc
+        <include refid="orderWithCollectorColumns"/>
+        where r.user_id = #{userId}
+        order by r.create_time desc
     </select>
 
     <select id="selectByCollector" resultType="com.example.entity.RecycleOrder">
-        select * from recycle_order where collector_id = #{collectorId} order by create_time desc
+        <include refid="orderWithCollectorColumns"/>
+        where r.collector_id = #{collectorId}
+        order by r.create_time desc
     </select>
 
     <select id="selectByStatus" resultType="com.example.entity.RecycleOrder">
-        select * from recycle_order where status = #{status} order by create_time asc
+        <include refid="orderWithCollectorColumns"/>
+        where r.status = #{status}
+        order by r.create_time asc
     </select>
 
     <select id="selectAvgRatingByCollector" resultType="java.math.BigDecimal">

@@ -51,9 +51,6 @@ public class RecycleOrderService {
     @Resource
     private DispatchRecordMapper dispatchRecordMapper;
 
-    @Resource
-    private UserAddressMapper userAddressMapper;
-
     @Autowired
     private ApplianceTypeMapper applianceTypeMapper;
 
@@ -277,29 +274,17 @@ public class RecycleOrderService {
             throw new CustomException("该订单用户指定了回收员，请手动派单");
         }
 
+        if (recycleOrder.getAddressLat() == null || recycleOrder.getAddressLng() == null) {
+            throw new CustomException("订单缺少定位坐标，无法智能派单");
+        }
+
         double lat = recycleOrder.getAddressLat().doubleValue();
         double lng = recycleOrder.getAddressLng().doubleValue();
 
-        // 解析订单所属区县（从 addressDetail 中提取，或直接查地址表）
-        String district = null;
-        if (recycleOrder.getAddressId() != null) {
-            UserAddress addr = userAddressMapper.selectById(recycleOrder.getAddressId());
-            if (addr != null) {
-                district = addr.getDistrict();
-            }
-        }
+        // 取订单所属社区名称，用于匹配负责该社区的回收员
+        String community = recycleOrder.getCommunity();
 
-        List<Collector> candidates;
-        // 优先查该区域内5km的回收员
-        if (district != null && !district.isEmpty()) {
-            candidates = collectorMapper.selectNearbyByDistrict(lat, lng, 5000.0, district);
-        } else {
-            candidates = List.of();
-        }
-        // 如果区域内没有，退回到纯距离查询
-        if (candidates.isEmpty()) {
-            candidates = collectorMapper.selectNearby(lat, lng, 5000.0);
-        }
+        List<Collector> candidates = findDispatchCandidates(lat, lng, community);
 
         if (candidates.isEmpty()) {
             throw new CustomException("附近暂无可用回收员");
@@ -316,17 +301,39 @@ public class RecycleOrderService {
         recycleOrderMapper.updateById(recycleOrder);
 
         // 记录派单日志，计算真实距离
-        double distKm = calcDistance(lat, lng,
-                selectedCollector.getLocationLat().doubleValue(),
-                selectedCollector.getLocationLng().doubleValue());
+        Double distance = selectedCollector.getDistance();
+        if (distance == null) {
+            if (selectedCollector.getLocationLat() == null || selectedCollector.getLocationLng() == null) {
+                throw new CustomException("回收员缺少定位坐标，无法完成智能派单");
+            }
+            distance = calcDistance(lat, lng,
+                    selectedCollector.getLocationLat().doubleValue(),
+                    selectedCollector.getLocationLng().doubleValue());
+        }
         DispatchRecord dispatchRecord = new DispatchRecord();
         dispatchRecord.setOrderId(orderId);
         dispatchRecord.setCollectorId(selectedCollector.getId());
         dispatchRecord.setDispatchType("auto");
-        dispatchRecord.setDistance(BigDecimal.valueOf(distKm).setScale(2, RoundingMode.HALF_UP));
-        dispatchRecord.setEstimatedTime((int) Math.ceil(distKm * 3)); // 粗估：每公里3分钟
+        dispatchRecord.setDistance(BigDecimal.valueOf(distance).setScale(2, RoundingMode.HALF_UP));
+        dispatchRecord.setEstimatedTime((int) Math.ceil(distance * 3)); // 粗估：每公里3分钟
         dispatchRecordMapper.insert(dispatchRecord);
     }
+
+    private List<Collector> findDispatchCandidates(double lat, double lng, String community) {
+        List<Collector> candidates;
+        if (community != null && !community.isBlank()) {
+            candidates = collectorMapper.selectNearbyByCommunity(lat, lng, 5000.0, community.trim());
+        } else {
+            candidates = List.of();
+        }
+        if (!candidates.isEmpty()) {
+            return candidates;
+        }
+
+        candidates = collectorMapper.selectNearby(lat, lng, 5000.0);
+        return candidates;
+    }
+
 
     /**
      * 一键批量智能派单：对所有待分配且未指定回收员的订单执行智能派单

@@ -88,7 +88,7 @@
               v-model="form.serviceArea"
               type="textarea"
               :rows="3"
-              placeholder="请输入您熟悉的服务区域，如：朝阳区、海淀区等。建议填写您常驻的区域，方便系统派单"
+              placeholder="请输入您负责的社区/小区名称，多个用顿号分隔，如：阳光花园、翠苑小区、锦绣社区。系统将按社区匹配派单"
           />
         </el-form-item>
 

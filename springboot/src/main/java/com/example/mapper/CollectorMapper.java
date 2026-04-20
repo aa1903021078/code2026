@@ -62,9 +62,9 @@ public interface CollectorMapper {
     List<Collector> selectNearby(@Param("lat")Double lat,@Param("lng")Double lng,@Param("radius")Double radius);
 
     /**
-     * 按区域+距离查询可用回收员
+     * 按社区+距离查询可用回收员
      */
-    List<Collector> selectNearbyByDistrict(@Param("lat")Double lat,@Param("lng")Double lng,@Param("radius")Double radius,@Param("district")String district);
+    List<Collector> selectNearbyByCommunity(@Param("lat")Double lat,@Param("lng")Double lng,@Param("radius")Double radius,@Param("community")String community);
 
     /**
      * 查询待审核的回收员
