@@ -63,7 +63,11 @@
     </select>
 
     <select id="selectPointsRanking" resultType="java.util.Map">
-        select id, username, name, total_recycle_weight as totalWeight, points
+        select id,
+               username,
+               coalesce(nullif(name, ''), username, concat('用户', id)) as name,
+               total_recycle_weight as totalWeight,
+               points
         from user order by total_recycle_weight desc limit #{limit}
     </select>
 </mapper>

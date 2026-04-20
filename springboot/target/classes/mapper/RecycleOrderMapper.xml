@@ -109,14 +109,24 @@
     </select>
 
     <select id="selectApplianceTypeStats" resultType="java.util.HashMap">
-        select appliance_type_name as name, count(*) as count, sum(weight_actual) as weight
-        from recycle_order where status = 4 group by appliance_type_id
+        select coalesce(nullif(r.appliance_type_name, ''), a.name, concat('品类', r.appliance_type_id)) as name,
+               count(*) as count,
+               sum(r.weight_actual) as weight
+        from recycle_order r
+        left join appliance_type a on r.appliance_type_id = a.id
+        where r.status = 4
+        group by r.appliance_type_id, r.appliance_type_name, a.name
     </select>
 
     <select id="selectCollectorRanking" resultType="java.util.HashMap">
-        select c.id, c.name, count(*) as orderCount, sum(r.price_actual) as totalAmount
+        select c.id,
+               coalesce(nullif(c.name, ''), c.username, concat('回收员', c.id)) as name,
+               count(*) as orderCount,
+               sum(r.price_actual) as totalAmount
         from recycle_order r join collector c on r.collector_id = c.id
-        where r.status = 4 group by r.collector_id order by orderCount desc limit #{limit}
+        where r.status = 4
+        group by r.collector_id, c.id, c.name, c.username
+        order by orderCount desc limit #{limit}
     </select>
 
     <!-- 带版本号查询 -->

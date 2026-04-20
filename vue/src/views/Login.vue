@@ -261,6 +261,15 @@ const adminRules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
+const isBizError = (res) => res && typeof res === 'object' && res.code && res.code !== '200' && res.code !== 200
+
+const ensureLoginSuccess = (res) => {
+  if (isBizError(res)) {
+    throw new Error(res.msg || '登录失败')
+  }
+  return res
+}
+
 const handleLogin = async () => {
   await formRef.value.validate()
 
@@ -269,11 +278,11 @@ const handleLogin = async () => {
     let res
     let targetPath
     if (loginType.value === 'user') {
-      res = await userApi.login(form)
+      res = ensureLoginSuccess(await userApi.login(form))
       localStorage.setItem('role', '普通用户')
       targetPath = '/user'
     } else {
-      res = await collectorApi.login(form)
+      res = ensureLoginSuccess(await collectorApi.login(form))
       localStorage.setItem('role', '回收员')
       targetPath = '/collector'
     }
@@ -300,7 +309,7 @@ const handleAdminLogin = async () => {
 
   loading.value = true
   try {
-    const res = await adminApi.login({ ...adminForm, role: '管理员' })
+    const res = ensureLoginSuccess(await adminApi.login({ ...adminForm, role: '管理员' }))
     localStorage.setItem('token', res?.token || res.token || 'token')
     localStorage.setItem('user', JSON.stringify(res))
     localStorage.setItem('role', '管理员')

@@ -3,14 +3,17 @@ package com.example.service;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.example.entity.Account;
+import com.example.entity.RecycleOrder;
 import com.example.entity.User;
 import com.example.exception.CustomException;
+import com.example.mapper.RecycleOrderMapper;
 import com.example.mapper.UserMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -21,6 +24,9 @@ public class UserService {
 
     @Resource
     private UserMapper userMapper;
+
+    @Resource
+    private RecycleOrderMapper recycleOrderMapper;
 
 
     /**
@@ -190,6 +196,29 @@ public class UserService {
         if (ObjectUtil.isNull(user)) {
             throw new CustomException("用户不存在");
         }
+
+        List<RecycleOrder> orders = recycleOrderMapper.selectByUser(id);
+        int totalRecycleCount = 0;
+        BigDecimal totalRecycleWeight = BigDecimal.ZERO;
+        BigDecimal carbonSaved = BigDecimal.ZERO;
+
+        for (RecycleOrder order : orders) {
+            if (!Integer.valueOf(4).equals(order.getStatus())) {
+                continue;
+            }
+            totalRecycleCount++;
+            if (order.getWeightActual() != null) {
+                totalRecycleWeight = totalRecycleWeight.add(order.getWeightActual());
+            }
+            if (order.getCarbonSaved() != null) {
+                carbonSaved = carbonSaved.add(order.getCarbonSaved());
+            }
+        }
+
+        user.setPoints(user.getPoints() == null ? 0 : user.getPoints());
+        user.setTotalRecycleCount(totalRecycleCount);
+        user.setTotalRecycleWeight(totalRecycleWeight);
+        user.setCarbonSaved(carbonSaved);
         return user;
     }
 

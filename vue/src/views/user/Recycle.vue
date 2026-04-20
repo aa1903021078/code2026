@@ -169,40 +169,22 @@
 
             <!-- 地址选择 -->
             <el-form-item label="上门地址" prop="addressId">
-              <div class="address-list">
-                <!-- 已保存的地址卡片 -->
-                <div
-                    v-for="addr in addressList"
-                    :key="addr.id"
-                    class="address-item"
-                    :class="{ active: form.addressId === addr.id }"
-                    @click="selectAddress(addr)"
-                >
-                  <div class="addr-header">
-                    <span class="name">{{ addr.contactName }}</span>
-                    <span class="phone">{{ addr.contactPhone }}</span>
-                    <el-tag v-if="addr.isDefault" size="small" type="success">默认</el-tag>
-                  </div>
-                  <div class="addr-detail">
-                    {{ addr.province }}{{ addr.city }}{{ addr.district }}{{ addr.detailAddress }}
-                  </div>
-                  <div class="addr-tags">
-                    <el-tag v-if="addr.buildingType === 1" size="small">电梯房</el-tag>
-                    <el-tag v-else size="small" type="warning">楼梯房{{ addr.floor }}层</el-tag>
-                  </div>
+              <!-- 已选中地址的预览 -->
+              <div v-if="selectedAddr" class="selected-address-preview" @click="showSelectAddress = true">
+                <div class="addr-header">
+                  <span class="name">{{ selectedAddr.contactName }}</span>
+                  <span class="phone">{{ selectedAddr.contactPhone }}</span>
+                  <el-tag v-if="selectedAddr.isDefault" size="small" type="success">默认</el-tag>
                 </div>
-
-                <!-- 添加新地址按钮 -->
-                <div class="add-address" @click="showAddAddress = true">
-                  <el-icon><Plus /></el-icon>
-                  <span>添加新地址</span>
+                <div class="addr-detail">
+                  {{ selectedAddr.province }}{{ selectedAddr.city }}{{ selectedAddr.district }}{{ selectedAddr.detailAddress }}
                 </div>
-
-                <!-- 调试提示：无地址时显示 -->
-                <div v-if="addressList.length === 0" class="empty-address-tip">
-                  <el-icon><Info-Filled /></el-icon>
-                  <span>暂无保存的地址，请点击上方按钮添加</span>
-                </div>
+                <div class="addr-change">点击更换地址 ></div>
+              </div>
+              <!-- 未选中时 -->
+              <div v-else class="select-address-btn" @click="showSelectAddress = true">
+                <el-icon><Location /></el-icon>
+                <span>选择上门地址</span>
               </div>
             </el-form-item>
 
@@ -279,6 +261,53 @@
       </el-col>
     </el-row>
 
+    <!-- 选择地址对话框 -->
+    <el-dialog
+        v-model="showSelectAddress"
+        title="选择上门地址"
+        width="550px"
+        :close-on-click-modal="false"
+    >
+      <div class="address-select-dialog">
+        <div v-if="addressList.length === 0" class="empty-address-tip">
+          <el-icon><InfoFilled /></el-icon>
+          <span>暂无保存的地址，请添加新地址</span>
+        </div>
+        <div v-else class="address-list-dialog">
+          <div
+              v-for="addr in sortedAddressList"
+              :key="addr.id"
+              class="address-item-dialog"
+              :class="{ active: form.addressId === addr.id }"
+              @click="confirmSelectAddress(addr)"
+          >
+            <div class="addr-radio">
+              <el-icon v-if="form.addressId === addr.id" color="#52c41a"><CircleCheckFilled /></el-icon>
+              <div v-else class="radio-empty"></div>
+            </div>
+            <div class="addr-content">
+              <div class="addr-header">
+                <span class="name">{{ addr.contactName }}</span>
+                <span class="phone">{{ addr.contactPhone }}</span>
+                <el-tag v-if="addr.isDefault" size="small" type="success">默认</el-tag>
+              </div>
+              <div class="addr-detail">
+                {{ addr.province }}{{ addr.city }}{{ addr.district }}{{ addr.detailAddress }}
+              </div>
+              <div class="addr-tags">
+                <el-tag v-if="addr.buildingType === 1" size="small">电梯房</el-tag>
+                <el-tag v-else size="small" type="warning">楼梯房{{ addr.floor }}层</el-tag>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="add-address-btn" @click="showSelectAddress = false; showAddAddress = true">
+          <el-icon><Plus /></el-icon>
+          <span>添加新地址</span>
+        </div>
+      </div>
+    </el-dialog>
+
     <!-- 添加地址对话框 -->
     <el-dialog
         v-model="showAddAddress"
@@ -299,7 +328,7 @@
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Plus, Warning, InfoFilled } from '@element-plus/icons-vue'
+import { Plus, Warning, InfoFilled, Location, CircleCheckFilled } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import AddressForm from '@/components/AddressForm.vue'
 
@@ -307,6 +336,7 @@ const router = useRouter()
 const formRef = ref()
 const submitting = ref(false)
 const showAddAddress = ref(false)
+const showSelectAddress = ref(false)
 
 const form = reactive({
   applianceTypeId: null,
@@ -479,6 +509,12 @@ const loadAddresses = async () => {
     addressList.value = list
     console.log('[RecyclePage] 地址列表已更新，数量:', list.length)
 
+    // 自动选中默认地址
+    if (!form.addressId && list.length > 0) {
+      const defaultAddr = list.find(a => a.isDefault === 1) || list[0]
+      selectAddress(defaultAddr)
+    }
+
   } catch (e) {
     console.error('[RecyclePage] 加载地址失败:', e)
     ElMessage.error('加载地址列表失败')
@@ -497,6 +533,20 @@ const selectAddress = (addr) => {
   form.addressId = addr.id
   form.contactName = addr.contactName || ''
   form.contactPhone = addr.contactPhone || ''
+}
+
+const selectedAddr = computed(() => {
+  return addressList.value.find(a => a.id === form.addressId) || null
+})
+
+// 默认地址排在最前面
+const sortedAddressList = computed(() => {
+  return [...addressList.value].sort((a, b) => (b.isDefault || 0) - (a.isDefault || 0))
+})
+
+const confirmSelectAddress = (addr) => {
+  selectAddress(addr)
+  showSelectAddress.value = false
 }
 
 const disabledDate = (time) => {
@@ -736,6 +786,38 @@ const submitOrder = async () => {
     }
   }
 
+  .selected-address-preview {
+    width: 100%;
+    border: 2px solid #52c41a;
+    border-radius: 8px;
+    padding: 15px;
+    background: #f6ffed;
+    cursor: pointer;
+    transition: all 0.3s;
+    &:hover { box-shadow: 0 2px 8px rgba(82, 196, 26, 0.2); }
+    .addr-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+      .name { font-weight: bold; }
+      .phone { color: #666; }
+    }
+    .addr-detail { color: #333; margin-bottom: 8px; }
+    .addr-change { color: #52c41a; font-size: 13px; text-align: right; }
+  }
+
+  .select-address-btn {
+    width: 100%;
+    border: 2px dashed #d9d9d9;
+    border-radius: 8px;
+    padding: 25px;
+    text-align: center;
+    cursor: pointer;
+    color: #999;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 15px;
+    transition: all 0.3s;
+    &:hover { border-color: #52c41a; color: #52c41a; }
+  }
+
   .address-list {
     display: grid;
     gap: 15px;
@@ -872,6 +954,44 @@ const submitOrder = async () => {
         }
       }
     }
+  }
+}
+.address-select-dialog {
+  .empty-address-tip {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 30px; color: #909399; font-size: 14px;
+    background: #f5f7fa; border-radius: 8px; border: 1px dashed #dcdfe6;
+  }
+  .address-list-dialog {
+    max-height: 400px; overflow-y: auto;
+    .address-item-dialog {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 15px; border: 1px solid #e8e8e8; border-radius: 8px;
+      margin-bottom: 10px; cursor: pointer; transition: all 0.3s;
+      &:hover { border-color: #52c41a; background: #f6ffed; }
+      &.active { border-color: #52c41a; background: #f6ffed; }
+      .addr-radio {
+        padding-top: 2px; font-size: 20px;
+        .radio-empty {
+          width: 18px; height: 18px; border: 2px solid #d9d9d9; border-radius: 50%;
+        }
+      }
+      .addr-content { flex: 1; }
+      .addr-header {
+        display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+        .name { font-weight: bold; }
+        .phone { color: #666; }
+      }
+      .addr-detail { color: #333; font-size: 14px; margin-bottom: 6px; }
+      .addr-tags { margin-top: 4px; }
+    }
+  }
+  .add-address-btn {
+    border: 2px dashed #d9d9d9; border-radius: 8px; padding: 15px;
+    text-align: center; cursor: pointer; color: #999; margin-top: 10px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.3s;
+    &:hover { border-color: #52c41a; color: #52c41a; }
   }
 }
 // 新增：机况评估样式

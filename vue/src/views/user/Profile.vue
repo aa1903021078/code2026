@@ -35,358 +35,348 @@
     </div>
 
     <div class="profile-content">
-      <el-row :gutter="24">
+      <el-row :gutter="24" class="profile-row overview-row">
         <!-- 左侧：用户档案卡 -->
         <el-col :xs="24" :sm="24" :md="8" :lg="7">
-          <div class="left-column">
-            <!-- 个人信息卡片 -->
-            <el-card class="user-profile-card" shadow="hover">
-              <div class="avatar-wrapper">
-                <div class="avatar-ring">
-                  <el-upload
-                      class="avatar-uploader"
-                      action="/api/files/upload"
-                      :show-file-list="false"
-                      :on-success="handleAvatarSuccess"
-                      :on-error="handleAvatarError"
-                      :before-upload="beforeAvatarUpload"
-                      accept=".jpg,.jpeg,.png,.gif"
-                  >
-                    <img
-                        v-if="userInfo.avatar"
-                        :src="userInfo.avatar"
-                        class="avatar-img"
-                        alt="用户头像"
-                    />
-                    <div v-else class="avatar-placeholder">
-                      <el-icon :size="40" color="#52c41a"><UserFilled /></el-icon>
-                      <span class="upload-text">点击上传</span>
-                    </div>
-                    <div class="avatar-overlay">
-                      <el-icon :size="24"><Camera /></el-icon>
-                    </div>
-                  </el-upload>
-                </div>
-                <h2 class="user-name">{{ userInfo.name || userInfo.username }}</h2>
-                <p class="user-role">环保达人 Lv.{{ calculateLevel }}</p>
-                <div class="user-id">ID: {{ userInfo.id }}</div>
+          <el-card class="user-profile-card profile-section-card" shadow="hover">
+            <div class="avatar-wrapper">
+              <div class="avatar-ring">
+                <el-upload
+                    class="avatar-uploader"
+                    action="/api/files/upload"
+                    :show-file-list="false"
+                    :on-success="handleAvatarSuccess"
+                    :on-error="handleAvatarError"
+                    :before-upload="beforeAvatarUpload"
+                    accept=".jpg,.jpeg,.png,.gif"
+                >
+                  <img
+                      v-if="userInfo.avatar"
+                      :src="userInfo.avatar"
+                      class="avatar-img"
+                      alt="用户头像"
+                  />
+                  <div v-else class="avatar-placeholder">
+                    <el-icon :size="40" color="#52c41a"><UserFilled /></el-icon>
+                    <span class="upload-text">点击上传</span>
+                  </div>
+                  <div class="avatar-overlay">
+                    <el-icon :size="24"><Camera /></el-icon>
+                  </div>
+                </el-upload>
               </div>
+              <h2 class="user-name">{{ userInfo.name || userInfo.username }}</h2>
+              <p class="user-role">环保达人 Lv.{{ calculateLevel }}</p>
+              <div class="user-id">ID: {{ userInfo.id }}</div>
+            </div>
 
-              <!-- 统计网格 -->
-              <div class="stats-grid">
-                <div class="stat-box">
-                  <div class="stat-icon points">
-                    <el-icon><Coin /></el-icon>
-                  </div>
-                  <div class="stat-info">
-                    <div class="stat-value">{{ userInfo.points || 0 }}</div>
-                    <div class="stat-label">我的积分</div>
-                  </div>
+            <!-- 统计网格 -->
+            <div class="stats-grid">
+              <div class="stat-box">
+                <div class="stat-icon points">
+                  <el-icon><Coin /></el-icon>
                 </div>
-                <div class="stat-box">
-                  <div class="stat-icon recycle">
-                    <el-icon><RefreshRight /></el-icon>
-                  </div>
-                  <div class="stat-info">
-                    <div class="stat-value">{{ userInfo.totalRecycleCount || 0 }}</div>
-                    <div class="stat-label">回收次数</div>
-                  </div>
-                </div>
-                <div class="stat-box">
-                  <div class="stat-icon weight">
-                    <el-icon><Goods /></el-icon>
-                  </div>
-                  <div class="stat-info">
-                    <div class="stat-value">{{ userInfo.totalRecycleWeight || 0 }}<span class="unit">kg</span></div>
-                    <div class="stat-label">回收重量</div>
-                  </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{ userInfo.points || 0 }}</div>
+                  <div class="stat-label">我的积分</div>
                 </div>
               </div>
-            </el-card>
-
-            <!-- 环保贡献卡片 -->
-            <el-card class="eco-card" shadow="hover">
-              <template #header>
-                <div class="eco-header">
-                  <span class="eco-title">🌍 环保贡献</span>
-                  <el-tag type="success" effect="dark" size="small">累计减排</el-tag>
+              <div class="stat-box">
+                <div class="stat-icon recycle">
+                  <el-icon><RefreshRight /></el-icon>
                 </div>
-              </template>
-
-              <div class="carbon-display">
-                <div class="carbon-circle">
-                  <svg viewBox="0 0 36 36" class="circular-chart">
-                    <path
-                        class="circle-bg"
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                    <path
-                        class="circle"
-                        :stroke-dasharray="`${Math.min(carbonPercent, 100)}, 100`"
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                  </svg>
-                  <div class="carbon-value">
-                    <span class="number">{{ userInfo.carbonSaved || 0 }}</span>
-                    <span class="unit">kg</span>
-                  </div>
-                </div>
-                <p class="carbon-desc">累计减少碳排放</p>
-              </div>
-
-              <div class="tree-equivalent">
-                <div class="tree-icon">🌳</div>
-                <div class="tree-text">
-                  <div class="tree-count">相当于种植了 <strong>{{ Math.floor((userInfo.carbonSaved || 0) / 18) }}</strong> 棵树</div>
-                  <div class="tree-sub">为地球增添一份绿色</div>
+                <div class="stat-info">
+                  <div class="stat-value">{{ userInfo.totalRecycleCount || 0 }}</div>
+                  <div class="stat-label">回收次数</div>
                 </div>
               </div>
-
-              <el-divider />
-
-              <!-- 成就列表 -->
-              <div class="achievement-list">
-                <div class="achievement-item" v-for="(item, index) in achievements" :key="index">
-                  <el-icon :size="20" :color="item.color"><component :is="item.icon" /></el-icon>
-                  <span class="achievement-text">{{ item.text }}</span>
+              <div class="stat-box">
+                <div class="stat-icon weight">
+                  <el-icon><Goods /></el-icon>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{ userInfo.totalRecycleWeight || 0 }}<span class="unit">kg</span></div>
+                  <div class="stat-label">回收重量</div>
                 </div>
               </div>
-            </el-card>
-          </div>
+            </div>
+          </el-card>
         </el-col>
 
         <!-- 右侧：编辑区域 -->
         <el-col :xs="24" :sm="24" :md="16" :lg="17">
-          <div class="right-column">
-            <el-card class="edit-card" shadow="hover">
-              <div class="tabs-wrapper">
-                <div
-                    class="tab-item"
-                    :class="{ active: activeTab === 'profile' }"
-                    @click="activeTab = 'profile'"
-                >
-                  <el-icon><User /></el-icon>
-                  <span>基本信息</span>
-                </div>
-                <div
-                    class="tab-item"
-                    :class="{ active: activeTab === 'password' }"
-                    @click="activeTab = 'password'"
-                >
-                  <el-icon><Lock /></el-icon>
-                  <span>账号安全</span>
-                </div>
+          <el-card class="edit-card profile-section-card" shadow="hover">
+            <div class="tabs-wrapper">
+              <div
+                  class="tab-item"
+                  :class="{ active: activeTab === 'profile' }"
+                  @click="activeTab = 'profile'"
+              >
+                <el-icon><User /></el-icon>
+                <span>基本信息</span>
               </div>
-
-              <!-- 基本信息表单 -->
-              <div v-show="activeTab === 'profile'" class="tab-content">
-                <el-form
-                    ref="profileFormRef"
-                    :model="profileForm"
-                    :rules="profileRules"
-                    label-position="top"
-                    class="modern-form"
-                >
-                  <el-row :gutter="20">
-                    <el-col :span="12">
-                      <el-form-item label="用户名" prop="username">
-                        <el-input
-                            v-model="profileForm.username"
-                            disabled
-                            class="disabled-input"
-                        >
-                          <template #prefix>
-                            <el-icon><User /></el-icon>
-                          </template>
-                        </el-input>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="真实姓名" prop="name">
-                        <el-input
-                            v-model="profileForm.name"
-                            placeholder="请输入真实姓名"
-                            maxlength="20"
-                            show-word-limit
-                        >
-                          <template #prefix>
-                            <el-icon><EditPen /></el-icon>
-                          </template>
-                        </el-input>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-
-                  <el-row :gutter="20">
-                    <el-col :span="12">
-                      <el-form-item label="手机号码" prop="phone">
-                        <el-input
-                            v-model="profileForm.phone"
-                            placeholder="请输入手机号"
-                            maxlength="11"
-                        >
-                          <template #prefix>
-                            <el-icon><Iphone /></el-icon>
-                          </template>
-                        </el-input>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="电子邮箱" prop="email">
-                        <el-input
-                            v-model="profileForm.email"
-                            placeholder="请输入邮箱地址"
-                        >
-                          <template #prefix>
-                            <el-icon><Message /></el-icon>
-                          </template>
-                        </el-input>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-
-                  <el-form-item label="个人简介" prop="bio">
-                    <el-input
-                        v-model="profileForm.bio"
-                        type="textarea"
-                        :rows="4"
-                        placeholder="介绍一下你的环保心得..."
-                        maxlength="200"
-                        show-word-limit
-                        resize="none"
-                    />
-                  </el-form-item>
-
-                  <div class="form-actions">
-                    <el-button
-                        type="primary"
-                        size="large"
-                        @click="saveProfile"
-                        :loading="saving"
-                        class="save-btn"
-                    >
-                      <el-icon v-if="!saving"><Check /></el-icon>
-                      <span>保存修改</span>
-                    </el-button>
-                    <el-button
-                        size="large"
-                        @click="resetProfile"
-                    >
-                      重置
-                    </el-button>
-                  </div>
-                </el-form>
+              <div
+                  class="tab-item"
+                  :class="{ active: activeTab === 'password' }"
+                  @click="activeTab = 'password'"
+              >
+                <el-icon><Lock /></el-icon>
+                <span>账号安全</span>
               </div>
+            </div>
 
-              <!-- 密码修改表单 -->
-              <div v-show="activeTab === 'password'" class="tab-content">
-                <div class="security-tips">
-                  <el-alert
-                      title="安全提示"
-                      description="建议定期更换密码，不要使用过于简单的密码组合"
-                      type="info"
-                      show-icon
-                      :closable="false"
+            <!-- 基本信息表单 -->
+            <div v-show="activeTab === 'profile'" class="tab-content">
+              <el-form
+                  ref="profileFormRef"
+                  :model="profileForm"
+                  :rules="profileRules"
+                  label-position="top"
+                  class="modern-form"
+              >
+                <el-row :gutter="20">
+                  <el-col :span="12">
+                    <el-form-item label="用户名" prop="username">
+                      <el-input
+                          v-model="profileForm.username"
+                          disabled
+                          class="disabled-input"
+                      >
+                        <template #prefix>
+                          <el-icon><User /></el-icon>
+                        </template>
+                      </el-input>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="12">
+                    <el-form-item label="真实姓名" prop="name">
+                      <el-input
+                          v-model="profileForm.name"
+                          placeholder="请输入真实姓名"
+                          maxlength="20"
+                          show-word-limit
+                      >
+                        <template #prefix>
+                          <el-icon><EditPen /></el-icon>
+                        </template>
+                      </el-input>
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+
+                <el-row :gutter="20">
+                  <el-col :span="12">
+                    <el-form-item label="手机号码" prop="phone">
+                      <el-input
+                          v-model="profileForm.phone"
+                          placeholder="请输入手机号"
+                          maxlength="11"
+                      >
+                        <template #prefix>
+                          <el-icon><Iphone /></el-icon>
+                        </template>
+                      </el-input>
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+
+                <el-form-item label="个人简介" prop="bio">
+                  <el-input
+                      v-model="profileForm.bio"
+                      type="textarea"
+                      :rows="4"
+                      placeholder="介绍一下你的环保心得..."
+                      maxlength="200"
+                      show-word-limit
+                      resize="none"
                   />
+                </el-form-item>
+
+                <div class="form-actions">
+                  <el-button
+                      type="primary"
+                      size="large"
+                      @click="saveProfile"
+                      :loading="saving"
+                      class="save-btn"
+                  >
+                    <el-icon v-if="!saving"><Check /></el-icon>
+                    <span>保存修改</span>
+                  </el-button>
+                  <el-button
+                      size="large"
+                      @click="resetProfile"
+                  >
+                    重置
+                  </el-button>
                 </div>
+              </el-form>
+            </div>
 
-                <el-form
-                    ref="pwdFormRef"
-                    :model="pwdForm"
-                    :rules="pwdRules"
-                    label-position="top"
-                    class="modern-form password-form"
-                >
-                  <el-form-item label="当前密码" prop="oldPassword">
-                    <el-input
-                        v-model="pwdForm.oldPassword"
-                        type="password"
-                        show-password
-                        placeholder="请输入当前密码"
-                        size="large"
-                    >
-                      <template #prefix>
-                        <el-icon><Key /></el-icon>
-                      </template>
-                    </el-input>
-                  </el-form-item>
-
-                  <el-form-item label="新密码" prop="newPassword">
-                    <el-input
-                        v-model="pwdForm.newPassword"
-                        type="password"
-                        show-password
-                        placeholder="请输入新密码（至少6位）"
-                        size="large"
-                    >
-                      <template #prefix>
-                        <el-icon><Lock /></el-icon>
-                      </template>
-                    </el-input>
-                    <div class="password-strength" v-if="pwdForm.newPassword">
-                      <div class="strength-bar">
-                        <div
-                            class="strength-fill"
-                            :style="{ width: passwordStrength + '%', backgroundColor: strengthColor }"
-                        ></div>
-                      </div>
-                      <span class="strength-text" :style="{ color: strengthColor }">
-                        {{ strengthText }}
-                      </span>
-                    </div>
-                  </el-form-item>
-
-                  <el-form-item label="确认新密码" prop="confirmPassword">
-                    <el-input
-                        v-model="pwdForm.confirmPassword"
-                        type="password"
-                        show-password
-                        placeholder="请再次输入新密码"
-                        size="large"
-                    >
-                      <template #prefix>
-                        <el-icon><CircleCheck /></el-icon>
-                      </template>
-                    </el-input>
-                  </el-form-item>
-
-                  <div class="form-actions">
-                    <el-button
-                        type="danger"
-                        size="large"
-                        @click="changePassword"
-                        :loading="changingPwd"
-                        class="save-btn"
-                    >
-                      <el-icon v-if="!changingPwd"><Refresh /></el-icon>
-                      <span>确认修改密码</span>
-                    </el-button>
-                  </div>
-                </el-form>
+            <!-- 密码修改表单 -->
+            <div v-show="activeTab === 'password'" class="tab-content">
+              <div class="security-tips">
+                <el-alert
+                    title="安全提示"
+                    description="建议定期更换密码，不要使用过于简单的密码组合"
+                    type="info"
+                    show-icon
+                    :closable="false"
+                />
               </div>
-            </el-card>
 
-            <!-- 最近活动 -->
-            <el-card class="activity-card" shadow="hover">
-              <template #header>
-                <div class="activity-header">
-                  <span>📝 最近动态</span>
-                  <el-link type="primary" :underline="false" @click="$router.push('/user/orderList')">查看全部</el-link>
+              <el-form
+                  ref="pwdFormRef"
+                  :model="pwdForm"
+                  :rules="pwdRules"
+                  label-position="top"
+                  class="modern-form password-form"
+              >
+                <el-form-item label="当前密码" prop="oldPassword">
+                  <el-input
+                      v-model="pwdForm.oldPassword"
+                      type="password"
+                      show-password
+                      placeholder="请输入当前密码"
+                      size="large"
+                  >
+                    <template #prefix>
+                      <el-icon><Key /></el-icon>
+                    </template>
+                  </el-input>
+                </el-form-item>
+
+                <el-form-item label="新密码" prop="newPassword">
+                  <el-input
+                      v-model="pwdForm.newPassword"
+                      type="password"
+                      show-password
+                      placeholder="请输入新密码（至少6位）"
+                      size="large"
+                  >
+                    <template #prefix>
+                      <el-icon><Lock /></el-icon>
+                    </template>
+                  </el-input>
+                  <div class="password-strength" v-if="pwdForm.newPassword">
+                    <div class="strength-bar">
+                      <div
+                          class="strength-fill"
+                          :style="{ width: passwordStrength + '%', backgroundColor: strengthColor }"
+                      ></div>
+                    </div>
+                    <span class="strength-text" :style="{ color: strengthColor }">
+                      {{ strengthText }}
+                    </span>
+                  </div>
+                </el-form-item>
+
+                <el-form-item label="确认新密码" prop="confirmPassword">
+                  <el-input
+                      v-model="pwdForm.confirmPassword"
+                      type="password"
+                      show-password
+                      placeholder="请再次输入新密码"
+                      size="large"
+                  >
+                    <template #prefix>
+                      <el-icon><CircleCheck /></el-icon>
+                    </template>
+                  </el-input>
+                </el-form-item>
+
+                <div class="form-actions">
+                  <el-button
+                      type="danger"
+                      size="large"
+                      @click="changePassword"
+                      :loading="changingPwd"
+                      class="save-btn"
+                  >
+                    <el-icon v-if="!changingPwd"><Refresh /></el-icon>
+                    <span>确认修改密码</span>
+                  </el-button>
                 </div>
-              </template>
-              <el-timeline>
-                <el-timeline-item
-                    v-for="(activity, index) in recentActivities"
-                    :key="index"
-                    :type="activity.type"
-                    :color="activity.color"
-                    :timestamp="activity.time"
-                >
-                  {{ activity.content }}
-                </el-timeline-item>
-              </el-timeline>
-            </el-card>
-          </div>
+              </el-form>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="24" class="profile-row detail-row">
+        <el-col :xs="24" :sm="24" :md="8" :lg="7">
+          <!-- 环保贡献卡片 -->
+          <el-card class="eco-card secondary-card" shadow="hover">
+            <template #header>
+              <div class="eco-header">
+                <span class="eco-title">🌍 环保贡献</span>
+                <el-tag type="success" effect="dark" size="small">累计减排</el-tag>
+              </div>
+            </template>
+
+            <div class="carbon-display">
+              <div class="carbon-circle">
+                <svg viewBox="0 0 36 36" class="circular-chart">
+                  <path
+                      class="circle-bg"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <path
+                      class="circle"
+                      :stroke-dasharray="`${Math.min(carbonPercent, 100)}, 100`"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                </svg>
+                <div class="carbon-value">
+                  <span class="number">{{ userInfo.carbonSaved || 0 }}</span>
+                  <span class="unit">kg</span>
+                </div>
+              </div>
+              <p class="carbon-desc">累计减少碳排放</p>
+            </div>
+
+            <div class="tree-equivalent">
+              <div class="tree-icon">🌳</div>
+              <div class="tree-text">
+                <div class="tree-count">相当于种植了 <strong>{{ Math.floor((userInfo.carbonSaved || 0) / 18) }}</strong> 棵树</div>
+                <div class="tree-sub">为地球增添一份绿色</div>
+              </div>
+            </div>
+
+            <el-divider />
+
+            <!-- 成就列表 -->
+            <div class="achievement-list">
+              <div class="achievement-item" v-for="(item, index) in achievements" :key="index">
+                <el-icon :size="20" :color="item.color"><component :is="item.icon" /></el-icon>
+                <span class="achievement-text">{{ item.text }}</span>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+
+        <el-col :xs="24" :sm="24" :md="16" :lg="17">
+          <!-- 最近活动 -->
+          <el-card class="activity-card secondary-card" shadow="hover">
+            <template #header>
+              <div class="activity-header">
+                <span>📝 最近动态</span>
+                <el-link type="primary" :underline="false" @click="$router.push('/user/orderList')">查看全部</el-link>
+              </div>
+            </template>
+            <el-timeline v-if="recentActivities.length">
+              <el-timeline-item
+                  v-for="(activity, index) in recentActivities"
+                  :key="index"
+                  :type="activity.type"
+                  :color="activity.color"
+                  :timestamp="activity.time"
+              >
+                {{ activity.content }}
+              </el-timeline-item>
+            </el-timeline>
+            <el-empty v-else description="暂无动态记录" :image-size="88" />
+          </el-card>
         </el-col>
       </el-row>
     </div>
@@ -397,8 +387,8 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
-  Plus, UserFilled, Camera, Coin, RefreshRight, Goods,
-  User, Lock, EditPen, Iphone, Message, Check, Key,
+  UserFilled, Camera, Coin, RefreshRight, Goods,
+  User, Lock, EditPen, Iphone, Check, Key,
   CircleCheck, Refresh, Star, Trophy, Collection
 } from '@element-plus/icons-vue'
 import request from '@/utils/request'
@@ -409,7 +399,6 @@ const userInfo = reactive({
   username: '',
   name: '',
   phone: '',
-  email: '',
   avatar: '',
   points: 0,
   totalRecycleCount: 0,
@@ -432,20 +421,7 @@ const saving = ref(false)
 const changingPwd = ref(false)
 const profileFormRef = ref()
 const pwdFormRef = ref()
-
-// 静态成就数据
-const achievements = [
-  { icon: 'Star', color: '#f7ba2a', text: '连续回收7天' },
-  { icon: 'Trophy', color: '#52c41a', text: '环保先锋称号' },
-  { icon: 'Collection', color: '#409eff', text: '回收达人勋章' }
-]
-
-// 静态时间线数据
-const recentActivities = [
-  { content: '修改了个人资料', time: '2026-03-09 14:30', type: 'primary', color: '#409eff' },
-  { content: '完成了一次废纸回收，获得50积分', time: '2026-03-08 09:15', type: 'success', color: '#52c41a' },
-  { content: '成功预约上门回收服务', time: '2026-03-07 16:45', type: 'warning', color: '#f7ba2a' }
-]
+const recentActivities = ref([])
 
 // 初始化加载
 onMounted(() => {
@@ -457,28 +433,175 @@ const loadUserInfo = async () => {
   try {
     const cachedUser = JSON.parse(localStorage.getItem('user') || '{}')
     Object.assign(userInfo, cachedUser)
+    Object.assign(profileForm, cachedUser)
 
-    const res = await request.get(`/user/selectById/${userInfo.id}`)
+    if (!userInfo.id) {
+      recentActivities.value = []
+      return
+    }
+
+    const res = await request.get(`/user/profile/${userInfo.id}`)
     if (res) {
       Object.assign(userInfo, res)
       Object.assign(profileForm, res)
       localStorage.setItem('user', JSON.stringify(userInfo))
     }
+
+    await loadRecentActivities(userInfo.id)
   } catch (error) {
     console.error('加载用户信息失败:', error)
+    recentActivities.value = []
   }
 }
 
-// 计算等级
+const toNumber = (value) => {
+  const num = Number(value)
+  return Number.isFinite(num) ? num : 0
+}
+
+const formatDateTime = (value) => {
+  if (!value) return ''
+  const date = new Date(typeof value === 'string' ? value.replace(' ', 'T') : value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+  const year = date.getFullYear()
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+  const hours = `${date.getHours()}`.padStart(2, '0')
+  const minutes = `${date.getMinutes()}`.padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}`
+}
+
+const formatMetric = (value, digits = 2) => {
+  const num = toNumber(value)
+  if (Number.isInteger(num)) {
+    return `${num}`
+  }
+  return num.toFixed(digits).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')
+}
+
+const getOrderActivityTime = (order) => {
+  if (order.status === 4) return order.completeTime || order.updateTime || order.createTime
+  if (order.status === 5) return order.updateTime || order.createTime
+  if (order.status === 3) return order.arriveTime || order.updateTime || order.createTime
+  if (order.status === 2) return order.acceptTime || order.updateTime || order.createTime
+  if (order.status === 1) return order.assignTime || order.updateTime || order.createTime
+  return order.createTime || order.updateTime
+}
+
+const mapOrderToActivity = (order) => {
+  const applianceName = order.applianceTypeName || '家电'
+  const activityTime = getOrderActivityTime(order)
+  const sortTime = new Date((activityTime || '').replace?.(' ', 'T') || activityTime || 0).getTime() || 0
+
+  if (order.status === 4) {
+    return {
+      content: `完成了${applianceName}回收，获得${order.pointsEarned || 0}积分`,
+      time: formatDateTime(activityTime),
+      type: 'success',
+      color: '#52c41a',
+      sortTime
+    }
+  }
+  if (order.status === 5) {
+    return {
+      content: `取消了${applianceName}回收预约${order.cancelReason ? `（${order.cancelReason}）` : ''}`,
+      time: formatDateTime(activityTime),
+      type: 'danger',
+      color: '#ff4d4f',
+      sortTime
+    }
+  }
+  if (order.status === 3) {
+    return {
+      content: `${applianceName}回收订单已进入上门处理阶段`,
+      time: formatDateTime(activityTime),
+      type: 'primary',
+      color: '#409eff',
+      sortTime
+    }
+  }
+  if (order.status === 2) {
+    return {
+      content: `${applianceName}回收订单已被回收员接单`,
+      time: formatDateTime(activityTime),
+      type: 'primary',
+      color: '#1677ff',
+      sortTime
+    }
+  }
+  if (order.status === 1) {
+    return {
+      content: `${applianceName}回收预约已派单，等待回收员接单`,
+      time: formatDateTime(activityTime),
+      type: 'warning',
+      color: '#faad14',
+      sortTime
+    }
+  }
+  return {
+    content: `提交了${applianceName}回收预约`,
+    time: formatDateTime(activityTime),
+    type: 'warning',
+    color: '#f7ba2a',
+    sortTime
+  }
+}
+
+const loadRecentActivities = async (userId) => {
+  if (!userId) {
+    recentActivities.value = []
+    return
+  }
+
+  const orders = await request.get(`/recycleOrder/selectByUser/${userId}`)
+  recentActivities.value = (Array.isArray(orders) ? orders : [])
+    .map(mapOrderToActivity)
+    .sort((a, b) => b.sortTime - a.sortTime)
+    .slice(0, 6)
+    .map(({ sortTime, ...activity }) => activity)
+}
+
+const achievements = computed(() => [
+  {
+    icon: Star,
+    color: '#f7ba2a',
+    text: userInfo.totalRecycleCount
+      ? `累计完成 ${userInfo.totalRecycleCount} 次回收`
+      : '完成首次回收后点亮专属成就'
+  },
+  {
+    icon: Trophy,
+    color: '#52c41a',
+    text: `累计回收 ${formatMetric(userInfo.totalRecycleWeight)} kg 废旧家电`
+  },
+  {
+    icon: Collection,
+    color: '#409eff',
+    text: `累计减少 ${formatMetric(userInfo.carbonSaved)} kg 碳排放`
+  }
+])
+
+// 根据碳减排量计算环保达人等级
+// 阈值递增：0, 5, 15, 30, 50, 80, 120, 180, 260, 360, ...（每级差值+10）
 const calculateLevel = computed(() => {
-  const points = userInfo.points || 0
-  return Math.floor(points / 100) + 1
+  const carbon = toNumber(userInfo.carbonSaved)
+  let level = 1
+  let threshold = 0
+  let step = 5
+  while (threshold + step <= carbon) {
+    threshold += step
+    level++
+    step += 5
+  }
+  return level
 })
 
 // 碳排放百分比
 const carbonPercent = computed(() => {
   const max = 100
-  return ((userInfo.carbonSaved || 0) / max) * 100
+  return (toNumber(userInfo.carbonSaved) / max) * 100
 })
 
 // 密码强度计算
@@ -509,8 +632,7 @@ const strengthText = computed(() => {
 // 验证规则
 const profileRules = {
   name: [{ min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }],
-  phone: [{ pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }],
-  email: [{ type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }]
+  phone: [{ pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }]
 }
 
 const pwdRules = {
@@ -598,13 +720,11 @@ const changePassword = async () => {
 
   changingPwd.value = true
   try {
-    await request.put('/updatePassword', null, {
-      params: {
-        username: userInfo.username,
-        password: pwdForm.oldPassword,
-        newPassword: pwdForm.newPassword,
-        role: '普通用户'
-      }
+    await request.put('/updatePassword', {
+      username: userInfo.username,
+      password: pwdForm.oldPassword,
+      newPassword: pwdForm.newPassword,
+      role: '普通用户'
     })
     ElMessage.success('密码修改成功，请重新登录')
     localStorage.clear()
@@ -721,41 +841,73 @@ const changePassword = async () => {
 
 .profile-content {
   max-width: 1200px;
-  margin: -30px auto 0;             // 调整重叠距离
+  margin: -38px auto 0;             // 增强与头部的衔接，下方区域整体上提
   padding: 0 20px;
   position: relative;
   z-index: 1;
 }
 
-.left-column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.profile-row {
+  align-items: stretch;
+
+  :deep(.el-col) {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.overview-row {
+  margin-bottom: 16px;
+}
+
+.profile-section-card,
+.secondary-card {
+  height: 100%;
+}
+
+.detail-row {
+  margin-bottom: 0;
 }
 
 .user-profile-card {
+  position: relative;
   border-radius: 16px;
   border: none;
   overflow: hidden;
+  background: linear-gradient(180deg, #f7fff1 0%, #ffffff 42%);
+  box-shadow: 0 10px 30px rgba(82, 196, 26, 0.08);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 90px;
+    background: linear-gradient(135deg, rgba(82, 196, 26, 0.18), rgba(149, 222, 100, 0.05));
+    pointer-events: none;
+  }
 }
 
 .avatar-wrapper {
+  position: relative;
   text-align: center;
-  margin-bottom: 24px;
-  padding: 30px 30px 0;
+  margin-bottom: 16px;
+  padding: 24px 24px 0;
 
   .avatar-ring {
     display: inline-block;
-    padding: 4px;
+    padding: 3px;
     border-radius: 50%;
     background: linear-gradient(135deg, #52c41a, #95de64);
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 10px 24px rgba(82, 196, 26, 0.18);
   }
 
   .avatar-uploader {
     position: relative;
-    width: 120px;
-    height: 120px;
+    width: 104px;
+    height: 104px;
     border-radius: 50%;
     overflow: hidden;
     cursor: pointer;
@@ -807,25 +959,27 @@ const changePassword = async () => {
   }
 
   .user-name {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 600;
     color: #1f2937;
-    margin: 0 0 4px;
+    margin: 0 0 2px;
+    line-height: 1.25;
   }
 
   .user-role {
-    font-size: 14px;
+    font-size: 13px;
     color: #52c41a;
-    font-weight: 500;
-    margin: 0 0 8px;
+    font-weight: 600;
+    margin: 0 0 10px;
   }
 
   .user-id {
     font-size: 12px;
     color: #9ca3af;
     font-family: monospace;
-    background: #f3f4f6;
-    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid #eef2f7;
+    padding: 4px 10px;
     border-radius: 12px;
     display: inline-block;
   }
@@ -834,31 +988,32 @@ const changePassword = async () => {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-top: 24px;
-  padding: 0 20px 30px;
+  gap: 10px;
+  margin-top: 0;
+  padding: 0 18px 18px;
 
   .stat-box {
-    background: #f9fafb;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid #f1f5f9;
     border-radius: 12px;
-    padding: 16px 8px;
+    padding: 12px 8px;
     text-align: center;
     transition: transform 0.2s, box-shadow 0.2s;
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
     }
 
     .stat-icon {
-      width: 40px;
-      height: 40px;
+      width: 34px;
+      height: 34px;
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 8px;
-      font-size: 20px;
+      margin: 0 auto 6px;
+      font-size: 18px;
 
       &.points { background: #fff7e6; color: #fa8c16; }
       &.recycle { background: #f6ffed; color: #52c41a; }
@@ -866,7 +1021,7 @@ const changePassword = async () => {
     }
 
     .stat-value {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 700;
       color: #1f2937;
       line-height: 1.2;
@@ -880,9 +1035,9 @@ const changePassword = async () => {
     }
 
     .stat-label {
-      font-size: 12px;
+      font-size: 11px;
       color: #6b7280;
-      margin-top: 4px;
+      margin-top: 3px;
     }
   }
 }
@@ -1026,25 +1181,18 @@ const changePassword = async () => {
   }
 }
 
-.right-column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
 .edit-card {
   border-radius: 16px;
   border: none;
-  min-height: 500px;
 }
 
 .tabs-wrapper {
   display: flex;
   border-bottom: 1px solid #e5e7eb;
-  padding: 0 24px;
+  padding: 0 20px;
 
   .tab-item {
-    padding: 16px 24px;
+    padding: 14px 20px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1071,7 +1219,7 @@ const changePassword = async () => {
 }
 
 .tab-content {
-  padding: 24px;
+  padding: 20px;
   animation: fadeIn 0.3s ease;
 }
 
@@ -1082,15 +1230,15 @@ const changePassword = async () => {
 
 .modern-form {
   .el-form-item {
-    margin-bottom: 24px;
+    margin-bottom: 18px;
   }
 }
 
 .form-actions {
   display: flex;
   gap: 12px;
-  margin-top: 32px;
-  padding-top: 24px;
+  margin-top: 24px;
+  padding-top: 18px;
   border-top: 1px solid #e5e7eb;
 
   .save-btn {
@@ -1105,12 +1253,12 @@ const changePassword = async () => {
 }
 
 .password-form {
-  max-width: 480px;
+  max-width: 460px;
   margin: 0 auto;
 }
 
 .security-tips {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .password-strength {
@@ -1190,8 +1338,12 @@ const changePassword = async () => {
   }
 
   .profile-content {
-    margin-top: -20px;
+    margin-top: -24px;
     padding: 0 12px;
+  }
+
+  .overview-row {
+    margin-bottom: 12px;
   }
 
   .stats-grid {
@@ -1222,14 +1374,32 @@ const changePassword = async () => {
   .tab-content {
     padding: 16px;
   }
+
+  .avatar-wrapper {
+    padding: 20px 18px 0;
+
+    .avatar-uploader {
+      width: 96px;
+      height: 96px;
+    }
+  }
 }
 </style>
 
 <!-- 全局样式覆盖 -->
 <style lang="scss">
 .profile-container {
+  .profile-section-card,
+  .secondary-card {
+    display: flex;
+    flex-direction: column;
+  }
+
   .user-profile-card .el-card__body {
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
 
   .eco-card .el-card__body {
@@ -1243,6 +1413,9 @@ const changePassword = async () => {
 
   .edit-card .el-card__body {
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
 
   .activity-card .el-card__header {
@@ -1254,14 +1427,14 @@ const changePassword = async () => {
     .el-form-item__label {
       font-weight: 500;
       color: #374151;
-      padding-bottom: 8px;
+      padding-bottom: 6px;
     }
 
     .el-input__wrapper {
       box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
       border: 1px solid #e5e7eb;
       border-radius: 8px;
-      padding: 4px 12px;
+      padding: 2px 12px;
       transition: all 0.2s;
 
       &:hover, &:focus-within {
@@ -1271,13 +1444,13 @@ const changePassword = async () => {
     }
 
     .el-input__inner {
-      height: 40px;
+      height: 36px;
     }
 
     .el-textarea__inner {
       border-radius: 8px;
       border: 1px solid #e5e7eb;
-      padding: 12px;
+      padding: 10px 12px;
 
       &:hover, &:focus {
         border-color: #52c41a;

@@ -444,10 +444,8 @@ const logout = () => {
 .content {
   flex: 1;
   padding: 28px 32px;
+  overflow-y: auto;
   background: #faf9f7;
-  max-width: 1400px;
-  width: 100%;
-  margin: 0 auto;
 }
 
 /* 过渡动画 */

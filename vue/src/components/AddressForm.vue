@@ -237,7 +237,6 @@ const selectSearchResult = (item) => {
   showSearchPanel.value = false
 }
 const getCurrentLocation = () => {
-  ElMessage.info('正在定位...')
   // 优先用浏览器定位
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
@@ -292,7 +291,6 @@ const submit = async () => {
     const submitData = { ...form }
     delete submitData.region
     const res = await request.post('/userAddress/add', submitData)
-    ElMessage.success('地址添加成功')
     emit('success', res)
   } catch (error) {
     ElMessage.error(error.message || '添加失败')

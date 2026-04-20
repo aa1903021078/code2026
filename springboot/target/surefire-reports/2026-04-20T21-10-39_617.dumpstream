@@ -1,0 +1,5 @@
+# Created at 2026-04-20T21:10:40.585
+Boot Manifest-JAR contains absolute paths in classpath 'D:\java\java_tool\apache-maven-3.8.1\demo\org\apache\maven\surefire\surefire-booter\3.2.5\surefire-booter-3.2.5.jar'
+Hint: <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+'other' has different root
+
