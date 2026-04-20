@@ -171,20 +171,16 @@ const rules = {
 // 加载家电类型
 const loadApplianceTypes = async () => {
   const res = await request.get('/recycle/applianceTypes')
-  if (res.code === '200') {
-    applianceTypes.value = res
-  }
+  applianceTypes.value = Array.isArray(res) ? res : []
 }
 
 // 加载用户地址
 const loadAddresses = async () => {
   const res = await request.get('/recycle/addresses')
-  if (res.code === '200') {
-    addresses.value = res
-    if (addresses.value.length === 0) {
-      ElMessage.warning('请先添加回收地址')
-      setTimeout(() => router.push('/front/address'), 1500)
-    }
+  addresses.value = Array.isArray(res) ? res : []
+  if (addresses.value.length === 0) {
+    ElMessage.warning('请先添加回收地址')
+    setTimeout(() => router.push('/front/address'), 1500)
   }
 }
 
@@ -220,10 +216,12 @@ const submitOrder = async () => {
       try {
         submitting.value = true
         const res = await request.post('/recycle/order', form.value)
-        if (res.code === '200') {
-          ElMessage.success('预约提交成功！')
-          setTimeout(() => router.push('/front/orders'), 1500)
+        if (res && res.code && res.code !== '200') {
+          ElMessage.error(res.msg || '提交失败')
+          return
         }
+        ElMessage.success('预约提交成功！')
+        setTimeout(() => router.push('/front/orders'), 1500)
       } catch (error) {
         console.error(error)
       } finally {

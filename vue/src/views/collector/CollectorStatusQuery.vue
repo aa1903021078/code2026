@@ -163,11 +163,11 @@ const queryStatus = async () => {
   loading.value = true
   try {
     const res = await collectorApi.queryStatus(queryForm.phone, queryForm.idCard)
-    if (res.code === '200') {
-      result.value = res
-    } else {
+    if (res && typeof res === 'object' && res.code && res.code !== '200') {
       ElMessage.error(res.msg || '查询失败')
+      return
     }
+    result.value = res
   } catch (error) {
     ElMessage.error(error.response?.data?.msg || '查询失败')
   } finally {

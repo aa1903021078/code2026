@@ -148,14 +148,7 @@ const normalizeAddressData = (rawData) => {
 const loadAddresses = async () => {
   try {
     const res = await request.get(`/userAddress/selectByUser/${user.id}`)
-    let addressList = []
-    if (res.code === '200' && Array.isArray(res)) {
-      addressList = res
-    } else if (Array.isArray(res)) {
-      addressList = res
-    } else if (res && Array.isArray(res)) {
-      addressList = res
-    }
+    const addressList = Array.isArray(res) ? res : []
     addresses.value = normalizeAddressData(addressList)
   } catch (e) {
     ElMessage.error('加载失败')

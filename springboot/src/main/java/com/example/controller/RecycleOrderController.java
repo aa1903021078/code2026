@@ -204,4 +204,22 @@ public class RecycleOrderController {
         List<Map<String, Object>> list = recycleOrderService.getCollectorIncomeList(collectorId, days);
         return Result.success(list);
     }
+
+    /**
+     * 派单页面统计数据
+     */
+    @GetMapping("/dispatchStats")
+    public Result getDispatchStats() {
+        Map<String, Object> stats = recycleOrderService.getDispatchStats();
+        return Result.success(stats);
+    }
+
+    /**
+     * 最近派单记录
+     */
+    @GetMapping("/recentDispatchRecords")
+    public Result getRecentDispatchRecords(@RequestParam(defaultValue = "10") Integer limit) {
+        List<Map<String, Object>> list = recycleOrderService.getRecentDispatchRecords(limit);
+        return Result.success(list);
+    }
 }

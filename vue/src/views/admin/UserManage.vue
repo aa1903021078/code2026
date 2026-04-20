@@ -205,6 +205,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 
+// 拦截器在业务错误时会原样返回 {code, msg}，此处判别
+const isBizError = (res) => res && typeof res === 'object' && res.code && res.code !== '200' && res.code !== 200
+
 // 加载状态
 const loading = ref(false)
 
@@ -257,30 +260,29 @@ const loadData = async () => {
 
     const res = await request.get('/user/selectPage', { params })
 
-    if (res.code === '200' || res.code === 200) {
-      const pageData = res
+    // 拦截器已解包 res.data，此处 res 即 PageInfo
+    const pageData = res
 
-      if (pageData && pageData.list) {
-        const list = Array.isArray(pageData.list) ? pageData.list : []
+    if (pageData && pageData.list) {
+      const list = Array.isArray(pageData.list) ? pageData.list : []
 
-        userList.value = list.map(user => ({
-          id: user.id,
-          username: user.username || '',
-          name: user.name || user.realName || '',
-          phone: user.phone || user.mobile || '',
-          points: user.points || 0,
-          totalRecycleCount: user.totalRecycleCount || 0,
-          totalRecycleWeight: user.totalRecycleWeight || 0,
-          status: user.status !== undefined ? Number(user.status) : 1,
-          createTime: user.createTime,
-          updateTime: user.updateTime
-        }))
+      userList.value = list.map(user => ({
+        id: user.id,
+        username: user.username || '',
+        name: user.name || user.realName || '',
+        phone: user.phone || user.mobile || '',
+        points: user.points || 0,
+        totalRecycleCount: user.totalRecycleCount || 0,
+        totalRecycleWeight: user.totalRecycleWeight || 0,
+        status: user.status !== undefined ? Number(user.status) : 1,
+        createTime: user.createTime,
+        updateTime: user.updateTime
+      }))
 
-        total.value = pageData.total || 0
-        console.log('加载数据成功:', userList.value)
-      }
+      total.value = pageData.total || 0
     } else {
-      ElMessage.error(res.msg || '加载失败')
+      userList.value = []
+      total.value = 0
     }
   } catch (error) {
     console.error('加载失败:', error)
@@ -301,12 +303,12 @@ const handleStatusChange = async (row) => {
       status: newStatus
     })
 
-    if (res.code === '200' || res.code === 200) {
-      ElMessage.success(`${actionText}成功`)
-    } else {
+    if (isBizError(res)) {
       row.status = newStatus === 1 ? 0 : 1
       ElMessage.error(res.msg || '操作失败')
+      return
     }
+    ElMessage.success(`${actionText}成功`)
   } catch (error) {
     row.status = newStatus === 1 ? 0 : 1
     ElMessage.error('操作失败')
@@ -373,13 +375,13 @@ const submitEdit = async () => {
   try {
     const res = await request.put('/user/update', editForm)
 
-    if (res.code === '200' || res.code === 200) {
-      ElMessage.success('编辑成功')
-      editVisible.value = false
-      loadData()
-    } else {
+    if (isBizError(res)) {
       ElMessage.error(res.msg || '编辑失败')
+      return
     }
+    ElMessage.success('编辑成功')
+    editVisible.value = false
+    loadData()
   } catch (error) {
     ElMessage.error('编辑失败')
   } finally {
@@ -395,18 +397,20 @@ const handleResetPassword = async (row) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
+  } catch (e) {
+    return
+  }
 
+  try {
     const res = await request.post('/user/resetPassword', { id: row.id })
 
-    if (res.code === '200' || res.code === 200) {
-      ElMessage.success('密码重置成功')
-    } else {
+    if (isBizError(res)) {
       ElMessage.error(res.msg || '重置失败')
+      return
     }
+    ElMessage.success('密码重置成功')
   } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('重置失败')
-    }
+    ElMessage.error('重置失败')
   }
 }
 

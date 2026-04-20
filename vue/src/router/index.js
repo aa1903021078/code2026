@@ -204,6 +204,12 @@ const routes = [
         name: 'Banner',
         component: () => import('@/views/admin/Banner.vue'),
         meta: { title: '轮播图管理', icon: 'Picture' }
+      },
+      {
+        path: 'profile',
+        name: 'AdminProfile',
+        component: () => import('@/views/admin/Profile.vue'),
+        meta: { title: '个人中心', icon: 'User' }
       }
     ]
   },

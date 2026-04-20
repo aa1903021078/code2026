@@ -120,4 +120,12 @@
           AND DATE(complete_time) = CURDATE()
     </select>
 
+    <select id="countOnline" resultType="int">
+        select count(*) from collector where work_status = 1 and status = 1 and audit_status = 1
+    </select>
+
+    <select id="selectAvailable" resultType="com.example.entity.Collector">
+        select * from collector where status = 1 and audit_status = 1 order by work_status desc, rating desc
+    </select>
+
 </mapper>

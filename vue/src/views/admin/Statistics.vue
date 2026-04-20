@@ -32,10 +32,6 @@
           <div class="card-content">
             <p class="card-value">{{ stat.value }}</p>
             <p class="card-label">{{ stat.label }}</p>
-            <p class="card-change" :class="stat.trend">
-              <el-icon><component :is="stat.trend === 'up' ? 'ArrowUp' : 'ArrowDown'" /></el-icon>
-              {{ stat.change }}% 较上期
-            </p>
           </div>
         </div>
       </el-col>
@@ -104,7 +100,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
@@ -115,56 +111,11 @@ import request from '@/utils/request'
 
 const route = useRoute()
 
-// 页面类型
-const statisticsType = computed(() => {
-  const path = route.path
-  if (path.includes('orders')) return 'orders'
-  if (path.includes('users')) return 'users'
-  if (path.includes('revenue')) return 'revenue'
-  if (path.includes('environment')) return 'environment'
-  return 'orders'
-})
-
-// 页面标题
-const pageTitle = computed(() => {
-  const titles = {
-    orders: '订单统计',
-    users: '用户统计',
-    revenue: '收益统计',
-    environment: '环保贡献统计'
-  }
-  return titles[statisticsType.value]
-})
-
-const pageSubtitle = computed(() => {
-  const subtitles = {
-    orders: '全面分析订单数据，优化回收效率',
-    users: '深入了解用户行为，提升服务质量',
-    revenue: '掌握收益趋势，优化经营策略',
-    environment: '量化环保贡献，共建绿色家园'
-  }
-  return subtitles[statisticsType.value]
-})
-
-const trendChartTitle = computed(() => {
-  const titles = {
-    orders: '订单趋势',
-    users: '用户增长趋势',
-    revenue: '收益趋势',
-    environment: '碳减排趋势'
-  }
-  return titles[statisticsType.value]
-})
-
-const pieChartTitle = computed(() => {
-  const titles = {
-    orders: '订单状态分布',
-    users: '用户类型分布',
-    revenue: '收益来源分布',
-    environment: '回收品类分布'
-  }
-  return titles[statisticsType.value]
-})
+// 页面固定为综合统计（路由只有一个 /admin/statistics）
+const pageTitle = ref('数据统计')
+const pageSubtitle = ref('全面分析平台运营数据')
+const trendChartTitle = ref('订单趋势')
+const pieChartTitle = ref('品类回收占比')
 
 // 日期范围
 const dateRange = ref([])
@@ -192,101 +143,75 @@ const dateShortcuts = [
 // 趋势图类型
 const trendType = ref('day')
 
-// 概览统计数据
-const overviewStats = computed(() => {
-  const configs = {
-    orders: [
-      { key: 'total', label: '总订单数', icon: 'Document', type: 'primary' },
-      { key: 'completed', label: '已完成', icon: 'CircleCheck', type: 'success' },
-      { key: 'pending', label: '待处理', icon: 'Timer', type: 'warning' },
-      { key: 'cancelled', label: '已取消', icon: 'CircleClose', type: 'danger' }
-    ],
-    users: [
-      { key: 'total', label: '总用户数', icon: 'User', type: 'primary' },
-      { key: 'new', label: '新增用户', icon: 'UserFilled', type: 'success' },
-      { key: 'active', label: '活跃用户', icon: 'TrendCharts', type: 'warning' },
-      { key: 'collectors', label: '回收员数', icon: 'Van', type: 'info' }
-    ],
-    revenue: [
-      { key: 'total', label: '总收益', icon: 'Money', type: 'primary' },
-      { key: 'orders', label: '订单收益', icon: 'Document', type: 'success' },
-      { key: 'points', label: '积分收益', icon: 'Coin', type: 'warning' },
-      { key: 'profit', label: '净利润', icon: 'Wallet', type: 'info' }
-    ],
-    environment: [
-      { key: 'carbon', label: '碳减排(kg)', icon: 'Leaf', type: 'success' },
-      { key: 'recycled', label: '回收量(kg)', icon: 'Goods', type: 'primary' },
-      { key: 'appliances', label: '回收件数', icon: 'Refrigerator', type: 'warning' },
-      { key: 'trees', label: '等效植树', icon: 'Tree', type: 'info' }
-    ]
-  }
+// ========== 真实数据 ==========
+const overview = ref({})
+const dailyStats = ref([])
+const applianceStats = ref([])
 
-  return configs[statisticsType.value].map(item => ({
+// 概览统计卡片
+const overviewStats = computed(() => {
+  const ov = overview.value
+  return [
+    { key: 'total', label: '总订单数', icon: 'Document', type: 'primary', value: ov.totalOrders || 0 },
+    { key: 'completed', label: '已完成', icon: 'CircleCheck', type: 'success', value: ov.completedOrders || 0 },
+    { key: 'pending', label: '待处理', icon: 'Timer', type: 'warning', value: (ov.pendingOrders || 0) + (ov.processingOrders || 0) },
+    { key: 'weight', label: '回收重量(kg)', icon: 'Goods', type: 'info', value: ov.totalWeight || 0 }
+  ].map(item => ({
     ...item,
-    value: getStatValue(item.key),
-    change: Math.floor(Math.random() * 30) + 5,
-    trend: Math.random() > 0.5 ? 'up' : 'down'
+    change: '-',
+    trend: 'up'
   }))
 })
 
-// 模拟统计数据
-const statsData = {
-  orders: { total: 1258, completed: 986, pending: 198, cancelled: 74 },
-  users: { total: 5680, new: 328, active: 2156, collectors: 48 },
-  revenue: { total: '¥128,560', orders: '¥98,320', points: '¥30,240', profit: '¥45,680' },
-  environment: { carbon: '15,680', recycled: '45,230', appliances: 3256, trees: 856 }
+// 加载概览数据
+const loadOverview = async () => {
+  try {
+    const res = await request.get('/statistics/overview')
+    if (res && typeof res === 'object' && !res.code) {
+      overview.value = res
+    }
+  } catch (e) {
+    console.error('加载概览失败:', e)
+  }
 }
 
-const getStatValue = (key) => {
-  return statsData[statisticsType.value]?.[key] || 0
+// 加载每日统计
+const loadDailyStats = async () => {
+  try {
+    const res = await request.get('/statistics/dailyStats')
+    dailyStats.value = Array.isArray(res) ? res : []
+  } catch (e) {
+    console.error('加载每日统计失败:', e)
+  }
 }
 
-// 表格数据
+// 加载品类统计
+const loadApplianceStats = async () => {
+  try {
+    const res = await request.get('/statistics/applianceTypeStats')
+    applianceStats.value = Array.isArray(res) ? res : []
+  } catch (e) {
+    console.error('加载品类统计失败:', e)
+  }
+}
+
+// 表格数据 - 从订单分页接口获取
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(100)
+const total = ref(0)
 const tableData = ref([])
 
-const tableColumns = computed(() => {
-  const columns = {
-    orders: [
-      { prop: 'date', label: '日期', width: 120 },
-      { prop: 'orderNo', label: '订单号', width: 150 },
-      { prop: 'userName', label: '用户', width: 120 },
-      { prop: 'collectorName', label: '回收员', width: 120 },
-      { prop: 'applianceType', label: '品类', width: 100 },
-      { prop: 'weight', label: '重量(kg)', width: 100 },
-      { prop: 'points', label: '积分', width: 100 },
-      { prop: 'status', label: '状态', width: 100 },
-      { prop: 'createTime', label: '创建时间', width: 160 }
-    ],
-    users: [
-      { prop: 'date', label: '日期', width: 120 },
-      { prop: 'newUsers', label: '新增用户', width: 100 },
-      { prop: 'activeUsers', label: '活跃用户', width: 100 },
-      { prop: 'ordersPerUser', label: '人均订单', width: 100 },
-      { prop: 'totalPoints', label: '发放积分', width: 120 },
-      { prop: 'recycledWeight', label: '回收重量(kg)', width: 120 }
-    ],
-    revenue: [
-      { prop: 'date', label: '日期', width: 120 },
-      { prop: 'orderRevenue', label: '订单收益', width: 120 },
-      { prop: 'pointsRevenue', label: '积分收益', width: 120 },
-      { prop: 'cost', label: '运营成本', width: 120 },
-      { prop: 'profit', label: '净利润', width: 120 },
-      { prop: 'profitRate', label: '利润率', width: 100 }
-    ],
-    environment: [
-      { prop: 'date', label: '日期', width: 120 },
-      { prop: 'carbonReduction', label: '碳减排(kg)', width: 120 },
-      { prop: 'recycledWeight', label: '回收重量(kg)', width: 120 },
-      { prop: 'applianceCount', label: '回收件数', width: 100 },
-      { prop: 'treesEquivalent', label: '等效植树', width: 100 }
-    ]
-  }
-  return columns[statisticsType.value]
-})
+const tableColumns = ref([
+  { prop: 'orderNo', label: '订单号', width: 200 },
+  { prop: 'applianceTypeName', label: '品类', width: 100 },
+  { prop: 'addressDetail', label: '地址' },
+  { prop: 'weightEstimate', label: '预估重量(kg)', width: 120 },
+  { prop: 'weightActual', label: '实际重量(kg)', width: 120 },
+  { prop: 'priceActual', label: '实际价格(元)', width: 120 },
+  { prop: 'carbonSaved', label: '碳减排(kg)', width: 110 },
+  { prop: 'createTime', label: '创建时间', width: 170 }
+])
 
 // 图表引用
 const trendChart = ref(null)
@@ -294,127 +219,95 @@ const pieChart = ref(null)
 let trendChartInstance = null
 let pieChartInstance = null
 
-// 初始化趋势图
+// 初始化趋势图（用真实 dailyStats 数据）
 const initTrendChart = () => {
   if (!trendChart.value) return
 
+  if (trendChartInstance) trendChartInstance.dispose()
   trendChartInstance = echarts.init(trendChart.value)
 
-  const option = {
+  const recent = dailyStats.value.slice(-14)
+  const xData = recent.map(d => String(d.statDate || '').slice(5))
+  const yOrders = recent.map(d => d.totalOrders || 0)
+  const yWeight = recent.map(d => d.totalWeight || 0)
+
+  trendChartInstance.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['本期', '上期'], bottom: 0 },
+    legend: { data: ['订单数', '回收重量(kg)'], bottom: 0 },
     grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+      data: xData.length ? xData : ['暂无数据']
     },
-    yAxis: { type: 'value' },
+    yAxis: [
+      { type: 'value', name: '订单数' },
+      { type: 'value', name: '重量(kg)' }
+    ],
     series: [
       {
-        name: '本期',
+        name: '订单数',
         type: 'line',
         smooth: true,
-        data: [120, 132, 101, 134, 90, 230, 210],
+        data: yOrders.length ? yOrders : [0],
         areaStyle: { opacity: 0.3 },
         itemStyle: { color: '#67c23a' }
       },
       {
-        name: '上期',
+        name: '回收重量(kg)',
         type: 'line',
         smooth: true,
-        data: [220, 182, 191, 234, 290, 330, 310],
-        itemStyle: { color: '#909399' }
+        yAxisIndex: 1,
+        data: yWeight.length ? yWeight : [0],
+        itemStyle: { color: '#409eff' }
       }
     ]
-  }
-
-  trendChartInstance.setOption(option)
+  })
 }
 
-// 初始化饼图
+// 初始化饼图（用真实 applianceStats 数据）
 const initPieChart = () => {
   if (!pieChart.value) return
 
+  if (pieChartInstance) pieChartInstance.dispose()
   pieChartInstance = echarts.init(pieChart.value)
 
-  const pieData = {
-    orders: [
-      { value: 986, name: '已完成' },
-      { value: 198, name: '待处理' },
-      { value: 74, name: '已取消' }
-    ],
-    users: [
-      { value: 5632, name: '普通用户' },
-      { value: 48, name: '回收员' }
-    ],
-    revenue: [
-      { value: 98320, name: '订单收益' },
-      { value: 30240, name: '积分收益' }
-    ],
-    environment: [
-      { value: 15230, name: '空调' },
-      { value: 12850, name: '冰箱' },
-      { value: 9870, name: '洗衣机' },
-      { value: 7280, name: '电视' }
-    ]
-  }
+  const colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452']
+  const pieData = applianceStats.value.length > 0
+      ? applianceStats.value.map((item, i) => ({
+          value: Number(item.count) || 0,
+          name: item.name || '未知',
+          itemStyle: { color: colors[i % colors.length] }
+        }))
+      : [{ value: 1, name: '暂无数据', itemStyle: { color: '#dcdfe6' } }]
 
-  const option = {
+  pieChartInstance.setOption({
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     legend: { orient: 'vertical', right: '5%', top: 'center' },
-    series: [
-      {
-        type: 'pie',
-        radius: ['40%', '70%'],
-        center: ['40%', '50%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 2
-        },
-        label: { show: false },
-        emphasis: {
-          label: { show: true, fontSize: 16, fontWeight: 'bold' }
-        },
-        data: pieData[statisticsType.value]
-      }
-    ]
-  }
-
-  pieChartInstance.setOption(option)
+    series: [{
+      type: 'pie',
+      radius: ['40%', '70%'],
+      center: ['40%', '50%'],
+      avoidLabelOverlap: false,
+      itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+      label: { show: false },
+      emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold' } },
+      data: pieData
+    }]
+  })
 }
 
-// 加载表格数据
+// 加载表格数据（从订单分页接口）
 const loadTableData = async () => {
   loading.value = true
   try {
-    // 模拟数据
-    tableData.value = Array.from({ length: pageSize.value }, (_, i) => ({
-      date: '2024-03-' + String(i + 1).padStart(2, '0'),
-      orderNo: 'R20240301' + String(i + 1).padStart(3, '0'),
-      userName: '用户' + (i + 1),
-      collectorName: '张师傅',
-      applianceType: ['空调', '冰箱', '洗衣机', '电视'][i % 4],
-      weight: Math.floor(Math.random() * 50) + 10,
-      points: Math.floor(Math.random() * 500) + 100,
-      status: ['已完成', '待处理', '进行中'][i % 3],
-      createTime: '2024-03-01 10:' + String(i * 5).padStart(2, '0'),
-      newUsers: Math.floor(Math.random() * 50) + 10,
-      activeUsers: Math.floor(Math.random() * 200) + 50,
-      ordersPerUser: (Math.random() * 3 + 1).toFixed(1),
-      totalPoints: Math.floor(Math.random() * 5000) + 1000,
-      recycledWeight: Math.floor(Math.random() * 500) + 100,
-      orderRevenue: '¥' + (Math.floor(Math.random() * 5000) + 1000),
-      pointsRevenue: '¥' + (Math.floor(Math.random() * 1000) + 200),
-      cost: '¥' + (Math.floor(Math.random() * 2000) + 500),
-      profit: '¥' + (Math.floor(Math.random() * 3000) + 500),
-      profitRate: (Math.random() * 30 + 10).toFixed(1) + '%',
-      carbonReduction: Math.floor(Math.random() * 500) + 100,
-      applianceCount: Math.floor(Math.random() * 100) + 20,
-      treesEquivalent: Math.floor(Math.random() * 50) + 10
-    }))
+    const res = await request.get('/recycleOrder/selectPage', {
+      params: { pageNum: currentPage.value, pageSize: pageSize.value }
+    })
+    tableData.value = Array.isArray(res?.list) ? res.list : []
+    total.value = res?.total || 0
+  } catch (e) {
+    console.error('加载表格数据失败:', e)
   } finally {
     loading.value = false
   }
@@ -423,8 +316,6 @@ const loadTableData = async () => {
 // 处理日期变化
 const handleDateChange = () => {
   loadTableData()
-  initTrendChart()
-  initPieChart()
 }
 
 // 导出数据
@@ -443,38 +334,39 @@ const handleCurrentChange = (val) => {
   loadTableData()
 }
 
-// 监听类型变化
-watch(statisticsType, () => {
-  nextTick(() => {
-    initTrendChart()
-    initPieChart()
-    loadTableData()
-  })
-})
-
 // 监听趋势类型变化
 watch(trendType, () => {
   initTrendChart()
 })
 
-onMounted(() => {
+const resizeHandler = () => {
+  trendChartInstance?.resize()
+  pieChartInstance?.resize()
+}
+
+onMounted(async () => {
   // 设置默认日期范围（最近7天）
   const end = new Date()
   const start = new Date()
   start.setTime(start.getTime() - 3600 * 1000 * 24 * 7)
   dateRange.value = [start, end]
 
+  // 并行加载数据
+  await Promise.all([loadOverview(), loadDailyStats(), loadApplianceStats()])
+  loadTableData()
+
   nextTick(() => {
     initTrendChart()
     initPieChart()
-    loadTableData()
   })
 
-  // 响应式
-  window.addEventListener('resize', () => {
-    trendChartInstance?.resize()
-    pieChartInstance?.resize()
-  })
+  window.addEventListener('resize', resizeHandler)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', resizeHandler)
+  trendChartInstance?.dispose()
+  pieChartInstance?.dispose()
 })
 </script>
 

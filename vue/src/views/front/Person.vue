@@ -69,13 +69,14 @@ const handleFileUpload = (res) => {
 
 /**  更新*/
 const update = () => {
-  request.put('/user/update',data.user).then(res =>{   //res是后端访问数据
-    if(res.code === '200'){
-      ElMessage.success('更新成功')
-      loadUser()
-    }else{
+  request.put('/user/update',data.user).then(res =>{
+    // 业务错误时拦截器会返回 {code, msg}；成功时 res 为 void/data
+    if (res && res.code && res.code !== '200') {
       ElMessage.error(res.msg)
+      return
     }
+    ElMessage.success('更新成功')
+    loadUser()
   })
 }
 

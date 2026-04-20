@@ -260,9 +260,11 @@ const handleStep2 = async () => {
           phone: form.phone,
           password: form.password
         })
-        if (res.code === 200) {
-          step.value = 2
+        if (res && typeof res === 'object' && res.code && res.code !== 200 && res.code !== '200') {
+          // 业务错误
+          return
         }
+        step.value = 2
       } catch (error) {
         console.error('注册失败:', error)
       }

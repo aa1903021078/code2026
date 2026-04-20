@@ -108,9 +108,9 @@
           <div v-if="!isCollapsed" class="group-title">个人中心</div>
           <router-link to="/admin/profile" class="menu-item" :class="{ active: isActive('/admin/profile') }">
             <div class="item-icon gray">
-              <el-icon><Tools /></el-icon>
+              <el-icon><User /></el-icon>
             </div>
-            <span v-if="!isCollapsed" class="item-text">系统设置</span>
+            <span v-if="!isCollapsed" class="item-text">个人中心</span>
           </router-link>
         </div>
       </div>
@@ -239,6 +239,7 @@ import {
   ChromeFilled, Search, FullScreen, ArrowDown, SwitchButton,
   Fold, Expand, Picture, ShoppingCart
 } from '@element-plus/icons-vue'
+import { selectPendingAudit } from '@/api/collector'
 
 const route = useRoute()
 const router = useRouter()
@@ -256,9 +257,20 @@ const adminInfo = ref({
 })
 
 const stats = ref({
-  pendingOrder: 5,
-  waitAudit: 2
+  pendingOrder: 0,
+  waitAudit: 0
 })
+
+// 拉取待审核回收员数量用于侧边栏角标
+const loadWaitAuditCount = async () => {
+  try {
+    const res = await selectPendingAudit()
+    // 拦截器成功时已解包为 data（数组）
+    stats.value.waitAudit = Array.isArray(res) ? res.length : 0
+  } catch (e) {
+    stats.value.waitAudit = 0
+  }
+}
 
 const notifications = ref([
   { type: 'order', title: '新订单提醒', content: '您有一个新的回收订单待处理', time: '5分钟前', read: false },
@@ -318,6 +330,7 @@ onMounted(() => {
   if (user.name) {
     adminInfo.value = { ...adminInfo.value, ...user }
   }
+  loadWaitAuditCount()
 })
 </script>
 

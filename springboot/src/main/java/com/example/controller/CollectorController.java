@@ -166,6 +166,15 @@ public class CollectorController {
     }
 
     /**
+     * 查询所有可用回收员（已审核通过且启用，不依赖坐标）
+     */
+    @GetMapping("/selectAvailable")
+    public Result selectAvailable() {
+        List<Collector> list = collectorService.selectAvailable();
+        return Result.success(list);
+    }
+
+    /**
      * 查询回收员今日订单统计
      */
     @GetMapping("/todayStats/{id}")

@@ -308,9 +308,10 @@ const beforeUpload = (file) => {
 
 // 上传成功处理
 const handleUploadSuccess = (res) => {
+  // 此处 res 是 el-upload 原生 XHR 返回的原始 JSON（未经过 axios 拦截器）
   if (res.code === '200' || res.code === 200) {
-    // 后端返回完整的下载URL：http://localhost:9090/files/download/xxx.jpg
-    formData.imageUrl = res
+    // 后端 Result.data 是完整的下载URL：http://localhost:9090/files/download/xxx.jpg
+    formData.imageUrl = res.data
     ElMessage.success('图片上传成功')
   } else {
     ElMessage.error(res.msg || '上传失败')
@@ -339,12 +340,9 @@ const loadData = async () => {
     }
 
     const res = await request.get('/banner/selectPage', { params })
-    if (res.code === '200' || res.code === 200) {
-      tableData.value = res.list
-      total.value = res.total
-    } else {
-      ElMessage.error(res.msg || '加载失败')
-    }
+    // 拦截器已解包 res.data
+    tableData.value = Array.isArray(res?.list) ? res.list : []
+    total.value = res?.total || 0
   } catch (error) {
     console.error('加载轮播图数据失败:', error)
     ElMessage.error('加载数据失败')
@@ -411,12 +409,12 @@ const handleDelete = (row) => {
   ).then(async () => {
     try {
       const res = await request.delete(`/banner/delete/${row.id}`)
-      if (res.code === '200' || res.code === 200) {
-        ElMessage.success('删除成功')
-        loadData()
-      } else {
+      if (res && typeof res === 'object' && res.code && res.code !== '200' && res.code !== 200) {
         ElMessage.error(res.msg || '删除失败')
+        return
       }
+      ElMessage.success('删除成功')
+      loadData()
     } catch (error) {
       ElMessage.error('删除失败')
     }
@@ -430,12 +428,12 @@ const handleToggleStatus = async (row) => {
 
   try {
     const res = await request.put(`/banner/toggleStatus/${row.id}?status=${newStatus}`)
-    if (res.code === '200' || res.code === 200) {
-      ElMessage.success(`${actionText}成功`)
-      row.status = newStatus
-    } else {
+    if (res && typeof res === 'object' && res.code && res.code !== '200' && res.code !== 200) {
       ElMessage.error(res.msg || `${actionText}失败`)
+      return
     }
+    ElMessage.success(`${actionText}成功`)
+    row.status = newStatus
   } catch (error) {
     ElMessage.error(`${actionText}失败`)
   }
@@ -455,13 +453,13 @@ const handleSubmit = async () => {
       res = await request.post('/banner/add', formData)
     }
 
-    if (res.code === '200' || res.code === 200) {
-      ElMessage.success(isEdit.value ? '修改成功' : '新增成功')
-      dialogVisible.value = false
-      loadData()
-    } else {
+    if (res && typeof res === 'object' && res.code && res.code !== '200' && res.code !== 200) {
       ElMessage.error(res.msg || (isEdit.value ? '修改失败' : '新增失败'))
+      return
     }
+    ElMessage.success(isEdit.value ? '修改成功' : '新增成功')
+    dialogVisible.value = false
+    loadData()
   } catch (error) {
     ElMessage.error(isEdit.value ? '修改失败' : '新增失败')
   } finally {

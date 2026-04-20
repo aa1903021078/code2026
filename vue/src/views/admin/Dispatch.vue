@@ -59,12 +59,12 @@
               <div class="order-body">
                 <div class="info-row">
                   <el-icon><Location /></el-icon>
-                  <span class="address" :title="order.address">{{ order.address }}</span>
+                  <span class="address" :title="order.addressDetail">{{ order.addressDetail }}</span>
                 </div>
                 <div class="info-row">
                   <el-icon><Refrigerator /></el-icon>
-                  <span>{{ order.applianceType }} · {{ order.estimatedWeight }}kg</span>
-                  <el-tag size="small" type="info" class="time-tag">{{ order.createTime }}</el-tag>
+                  <span>{{ order.applianceTypeName }} · {{ order.estimatedWeight }}kg</span>
+                  <el-tag size="small" type="info" class="time-tag">{{ formatTime(order.createTime) }}</el-tag>
                 </div>
               </div>
 
@@ -94,8 +94,8 @@
           <!-- 表格视图 -->
           <el-table v-else :data="pendingOrders" style="width: 100%" v-loading="loading">
             <el-table-column prop="orderNo" label="订单号" width="140" />
-            <el-table-column prop="address" label="地址" show-overflow-tooltip />
-            <el-table-column prop="applianceType" label="类型" width="100" />
+            <el-table-column prop="addressDetail" label="地址" show-overflow-tooltip />
+            <el-table-column prop="applianceTypeName" label="类型" width="100" />
             <el-table-column label="操作" width="200" fixed="right">
               <template #default="{ row }">
                 <el-button
@@ -143,19 +143,19 @@
             <div v-else class="map-content">
               <div class="selected-order-info">
                 <h4>当前选中订单</h4>
-                <p><strong>地址：</strong>{{ selectedOrder.address }}</p>
-                <p><strong>坐标：</strong>{{ selectedOrder.lat }}, {{ selectedOrder.lng }}</p>
+                <p><strong>地址：</strong>{{ selectedOrder.addressDetail }}</p>
+                <p><strong>坐标：</strong>{{ selectedOrder.addressLat }}, {{ selectedOrder.addressLng }}</p>
                 <div class="nearby-collectors" v-if="nearbyCollectors.length > 0">
-                  <h5>附近可用回收员（{{ nearbyCollectors.length }}人）</h5>
+                  <h5>可用回收员（{{ nearbyCollectors.length }}人）</h5>
                   <div v-for="c in nearbyCollectors" :key="c.id" class="collector-marker">
-                    <el-avatar :size="24" :src="c.avatar" />
-                    <span>{{ c.realName }}（{{ c.distance }}km）</span>
-                    <el-tag size="small" :type="c.status === 'idle' ? 'success' : 'warning'">
-                      {{ c.status === 'idle' ? '空闲' : '忙碌' }}
+                    <el-avatar :size="24">{{ (c.name || '').charAt(0) }}</el-avatar>
+                    <span>{{ c.name }}（{{ formatDistance(c.distance) }}km）</span>
+                    <el-tag size="small" :type="c.workStatus === 1 ? 'success' : 'warning'">
+                      {{ workStatusText(c.workStatus) }}
                     </el-tag>
                   </div>
                 </div>
-                <el-empty v-else description="5公里内暂无可用回收员" :image-size="60" />
+                <el-empty v-else description="暂无可用回收员" :image-size="60" />
               </div>
             </div>
           </div>
@@ -203,8 +203,8 @@
         />
 
         <div class="order-detail">
-          <p><strong>地址：</strong>{{ currentOrder.address }}</p>
-          <p><strong>家电：</strong>{{ currentOrder.applianceType }}（{{ currentOrder.estimatedWeight }}kg）</p>
+          <p><strong>地址：</strong>{{ currentOrder.addressDetail }}</p>
+          <p><strong>家电：</strong>{{ currentOrder.applianceTypeName }}（{{ currentOrder.estimatedWeight }}kg）</p>
         </div>
 
         <el-divider content-position="left">可用回收员列表</el-divider>
@@ -218,25 +218,25 @@
           >
             <div class="collector-info">
               <div class="collector-main">
-                <el-avatar :size="40" :src="collector.avatar" />
+                <el-avatar :size="40">{{ (collector.name || '').charAt(0) }}</el-avatar>
                 <div class="collector-text">
-                  <div class="name">{{ collector.realName }}</div>
+                  <div class="name">{{ collector.name }}</div>
                   <div class="stats">
                     <span>评分 {{ collector.rating }}</span>
                     <el-divider direction="vertical" />
-                    <span>今日 {{ collector.todayOrders }}单</span>
+                    <span>今日 {{ collector.todayOrderCount || 0 }}单</span>
                   </div>
                 </div>
                 <el-tag
-                    :type="collector.status === 'idle' ? 'success' : 'warning'"
+                    :type="collector.workStatus === 1 ? 'success' : 'warning'"
                     size="small"
                 >
-                  {{ collector.status === 'idle' ? '空闲' : '忙碌' }}
+                  {{ workStatusText(collector.workStatus) }}
                 </el-tag>
               </div>
-              <div class="distance" v-if="collector.distance">
+              <div class="distance" v-if="collector.distance != null">
                 <el-icon><Location /></el-icon>
-                距离订单 {{ collector.distance }}km
+                距离订单 {{ formatDistance(collector.distance) }}km
               </div>
             </div>
           </el-radio>
@@ -259,7 +259,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Document, User, CircleCheck, Timer,
@@ -270,9 +270,9 @@ import request from '@/utils/request'
 // 统计数据
 const stats = reactive({
   pendingCount: 0,
-  onlineCollectors: 8,
-  todayDispatched: 12,
-  avgResponseTime: 5.2
+  onlineCollectors: 0,
+  todayDispatched: 0,
+  avgResponseTime: 0
 })
 
 // 视图模式
@@ -302,7 +302,7 @@ const loadPendingOrders = async () => {
   loading.value = true
   try {
     const res = await request.get('/recycleOrder/selectPendingDispatch')
-    pendingOrders.value = res || []
+    pendingOrders.value = Array.isArray(res) ? res : []
     stats.pendingCount = pendingOrders.value.length
   } catch (error) {
     ElMessage.error('获取订单列表失败')
@@ -311,22 +311,52 @@ const loadPendingOrders = async () => {
   }
 }
 
+// 判断响应是否为业务错误（拦截器对非200会原样返回 {code, msg}）
+const isBizError = (res) => res && typeof res === 'object' && res.code && res.code !== '200' && res.code !== 200
+
+const formatTime = (t) => {
+  if (!t) return ''
+  return String(t).replace('T', ' ').substring(0, 16)
+}
+
+const formatDistance = (d) => {
+  if (d == null) return '-'
+  const n = Number(d)
+  return Number.isFinite(n) ? n.toFixed(2) : d
+}
+
+const workStatusText = (s) => {
+  if (s === 1) return '接单中'
+  if (s === 2) return '忙碌'
+  return '休息'
+}
+
 // 选中订单查看详情/地图
 const selectOrder = async (order) => {
   selectedOrder.value = order
-  // 修复：改为调用 collector 接口获取附近回收员
-  try {
-    const res = await request.get('/collector/selectNearby', {
-      params: {
-        lat: order.lat,
-        lng: order.lng,
-        radius: 5000
+  nearbyCollectors.value = []
+
+  // 先尝试按坐标查附近回收员
+  if (order.addressLat != null && order.addressLng != null) {
+    try {
+      const res = await request.get('/collector/selectNearby', {
+        params: { lat: order.addressLat, lng: order.addressLng, radius: 5000 }
+      })
+      if (Array.isArray(res) && res.length > 0) {
+        nearbyCollectors.value = res
+        return
       }
-    })
-    nearbyCollectors.value = res || []
+    } catch (error) {
+      console.error('获取附近回收员失败:', error)
+    }
+  }
+
+  // 附近无人或无坐标，查询所有可用回收员
+  try {
+    const res = await request.get('/collector/selectAvailable')
+    nearbyCollectors.value = Array.isArray(res) ? res : []
   } catch (error) {
-    console.error('获取附近回收员失败:', error)
-    nearbyCollectors.value = []
+    console.error('获取可用回收员失败:', error)
   }
 }
 
@@ -334,33 +364,35 @@ const selectOrder = async (order) => {
 const handleAutoDispatch = async (order) => {
   try {
     await ElMessageBox.confirm(
-        `确定对订单 ${order.orderNo} 执行智能派单吗？<br>系统将自动选择5公里内最近的可用回收员`,
+        `确定对订单 ${order.orderNo} 执行智能派单吗？系统将自动选择5公里内最近的可用回收员`,
         '确认智能派单',
         {
           confirmButtonText: '确认派单',
           cancelButtonText: '取消',
-          type: 'warning',
-          dangerouslyUseHTMLString: true
+          type: 'warning'
         }
     )
+  } catch (e) {
+    return // 用户取消
+  }
 
-    loadingOrderId.value = order.id
-    dispatchType.value = 'auto'
-
-    // 修复：使用正确的路径参数格式
-    await request.post(`/recycleOrder/dispatch/${order.id}`)
-
+  loadingOrderId.value = order.id
+  dispatchType.value = 'auto'
+  try {
+    const res = await request.post(`/recycleOrder/dispatch/${order.id}`)
+    if (isBizError(res)) {
+      ElMessage.error(res.msg || '派单失败')
+      return
+    }
     ElMessage.success(`订单 ${order.orderNo} 智能派单成功！`)
-    addRecentRecord(order, 'auto', '系统自动分配')
-
     await loadPendingOrders()
+    loadDispatchStats()
+    loadRecentRecords()
     if (selectedOrder.value?.id === order.id) {
       selectedOrder.value = null
     }
   } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error(error.response?.data?.message || '派单失败')
-    }
+    ElMessage.error(error?.response?.data?.message || '派单失败')
   } finally {
     loadingOrderId.value = null
     dispatchType.value = ''
@@ -372,20 +404,32 @@ const openManualDispatch = async (order) => {
   currentOrder.value = order
   selectedCollectorId.value = null
   manualDrawerVisible.value = true
+  availableCollectors.value = []
 
-  // 修复：改为调用 collector 接口获取可用回收员列表
-  try {
-    const res = await request.get('/collector/selectNearby', {
-      params: {
-        lat: order.lat,
-        lng: order.lng,
-        radius: 10000  // 手动派单范围扩大到10公里
+  // 先尝试按坐标查附近回收员
+  if (order.addressLat != null && order.addressLng != null) {
+    try {
+      const res = await request.get('/collector/selectNearby', {
+        params: { lat: order.addressLat, lng: order.addressLng, radius: 10000 }
+      })
+      if (Array.isArray(res) && res.length > 0) {
+        availableCollectors.value = res
+        return
       }
-    })
-    availableCollectors.value = res || []
+    } catch (error) {
+      console.error('获取附近回收员失败:', error)
+    }
+  }
+
+  // 附近无人或无坐标，查询所有可用回收员
+  try {
+    const res = await request.get('/collector/selectAvailable')
+    availableCollectors.value = Array.isArray(res) ? res : []
+    if (availableCollectors.value.length === 0) {
+      ElMessage.warning('暂无可用回收员')
+    }
   } catch (error) {
     console.error('获取可用回收员失败:', error)
-    availableCollectors.value = []
     ElMessage.warning('获取回收员列表失败，请稍后重试')
   }
 }
@@ -403,35 +447,29 @@ const confirmManualDispatch = async () => {
     loadingOrderId.value = currentOrder.value.id
     dispatchType.value = 'manual'
 
-    await request.post('/recycleOrder/manualDispatch', {
-      orderId: currentOrder.value.id,
-      collectorId: selectedCollectorId.value
+    // 后端使用 @RequestParam，必须通过 query params 传递
+    const res = await request.post('/recycleOrder/manualDispatch', null, {
+      params: {
+        orderId: currentOrder.value.id,
+        collectorId: selectedCollectorId.value
+      }
     })
+    if (isBizError(res)) {
+      ElMessage.error(res.msg || '手动派单失败')
+      return
+    }
 
-    ElMessage.success(`已手动派单给 ${collector?.realName || '回收员'}`)
-    addRecentRecord(currentOrder.value, 'manual', collector?.realName)
+    ElMessage.success(`已手动派单给 ${collector?.name || '回收员'}`)
 
     manualDrawerVisible.value = false
     await loadPendingOrders()
+    loadDispatchStats()
+    loadRecentRecords()
   } catch (error) {
-    ElMessage.error(error.response?.data?.message || '手动派单失败')
+    ElMessage.error(error?.response?.data?.message || '手动派单失败')
   } finally {
     loadingOrderId.value = null
     dispatchType.value = ''
-  }
-}
-
-// 添加最近记录
-const addRecentRecord = (order, type, collectorName) => {
-  recentRecords.value.unshift({
-    orderNo: order.orderNo,
-    type,
-    collectorName,
-    time: new Date().toLocaleTimeString(),
-    status: 'success'
-  })
-  if (recentRecords.value.length > 10) {
-    recentRecords.value.pop()
   }
 }
 
@@ -440,9 +478,48 @@ const centerMap = () => {
   ElMessage.info('地图已定位到选中订单位置')
 }
 
+// 加载统计数据
+const loadDispatchStats = async () => {
+  try {
+    const res = await request.get('/recycleOrder/dispatchStats')
+    if (res && typeof res === 'object' && !res.code) {
+      Object.assign(stats, res)
+    }
+  } catch (e) {
+    console.error('加载统计失败:', e)
+  }
+}
+
+// 加载最近派单记录
+const loadRecentRecords = async () => {
+  try {
+    const res = await request.get('/recycleOrder/recentDispatchRecords', { params: { limit: 10 } })
+    if (Array.isArray(res)) {
+      recentRecords.value = res.map(r => ({
+        orderNo: r.orderNo || '',
+        type: r.dispatchType || 'auto',
+        collectorName: r.collectorName || '未知',
+        time: formatTime(r.time),
+        status: 'success'
+      }))
+    }
+  } catch (e) {
+    console.error('加载派单记录失败:', e)
+  }
+}
+
+let refreshTimer = null
 onMounted(() => {
   loadPendingOrders()
-  setInterval(loadPendingOrders, 30000)
+  loadDispatchStats()
+  loadRecentRecords()
+  refreshTimer = setInterval(() => {
+    loadPendingOrders()
+    loadDispatchStats()
+  }, 30000)
+})
+onUnmounted(() => {
+  if (refreshTimer) clearInterval(refreshTimer)
 })
 </script>
 

@@ -48,13 +48,13 @@ const updatePassword = () => {
     ElMessage.warning('两次输入的新密码不同，请确认！')
     return
   }
-  request.put('/updatePassword',data.user).then(res => {   //res是后端访问数据
-    if (res.code === '200') {
-      ElMessage.success('更新成功')
-      logout()
-    }else{
+  request.put('/updatePassword',data.user).then(res => {
+    if (res && res.code && res.code !== '200') {
       ElMessage.error(res.msg)
+      return
     }
+    ElMessage.success('更新成功')
+    logout()
   })
 }
 

@@ -337,12 +337,12 @@ const handleRegister = async () => {
     }
 
     const res = await request.post('/user/register', submitData)
-    if (res.code === 200 || res.code === '200') {
-      ElMessage.success('注册成功，请登录')
-      router.push('/login')
-    } else {
+    if (res && typeof res === 'object' && res.code && res.code !== 200 && res.code !== '200') {
       ElMessage.error(res.message || res.msg || '注册失败')
+      return
     }
+    ElMessage.success('注册成功，请登录')
+    router.push('/login')
   } catch (error) {
     ElMessage.error(error.message || '注册失败，请稍后重试')
   } finally {

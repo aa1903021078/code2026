@@ -33,19 +33,20 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200">
+        <el-table-column label="操作" width="260">
           <template #default="{ row }">
             <el-button type="primary" link @click="edit(row)">编辑</el-button>
             <el-button type="warning" link @click="toggleTop(row)">
               {{ row.isTop === 1 ? '取消置顶' : '置顶' }}
             </el-button>
+            <el-button type="danger" link @click="remove(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
     <!-- 发布公告弹窗 -->
-    <el-dialog v-model="showAdd" title="发布公告" width="700px">
+    <el-dialog v-model="showAdd" :title="form.id ? '编辑公告' : '发布公告'" width="700px" @close="resetForm">
       <el-form :model="form" label-width="80px">
         <el-form-item label="标题">
           <el-input v-model="form.title" />
@@ -70,7 +71,7 @@
       </el-form>
       <template #footer>
         <el-button @click="showAdd = false">取消</el-button>
-        <el-button type="primary" @click="submit" :loading="submitting">发布</el-button>
+        <el-button type="primary" @click="submit" :loading="submitting">{{ form.id ? '保存' : '发布' }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -78,20 +79,24 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 
 const loading = ref(false)
 const noticeList = ref([])
 const showAdd = ref(false)
 const submitting = ref(false)
-const form = ref({
+
+const emptyForm = () => ({
+  id: null,
   title: '',
   type: 1,
   coverImage: '',
   content: '',
   isTop: 0
 })
+
+const form = ref(emptyForm())
 
 onMounted(() => {
   loadData()
@@ -101,7 +106,7 @@ const loadData = async () => {
   loading.value = true
   try {
     const res = await request.get('/notice/selectAll', {})
-    noticeList.value = res
+    noticeList.value = Array.isArray(res) ? res : []
   } catch (e) {}
   loading.value = false
 }
@@ -135,21 +140,56 @@ const toggleTop = async (row) => {
   }
 }
 
+const resetForm = () => {
+  form.value = emptyForm()
+}
+
 const submit = async () => {
+  if (!form.value.title?.trim()) {
+    ElMessage.warning('请输入标题')
+    return
+  }
   submitting.value = true
   try {
-    await request.post('/notice/add', form.value)
-    ElMessage.success('发布成功')
+    if (form.value.id) {
+      await request.put('/notice/update', form.value)
+      ElMessage.success('保存成功')
+    } else {
+      await request.post('/notice/add', form.value)
+      ElMessage.success('发布成功')
+    }
     showAdd.value = false
+    resetForm()
     loadData()
   } catch (error) {
-    ElMessage.error(error.message || '发布失败')
+    ElMessage.error(error.message || '操作失败')
   } finally {
     submitting.value = false
   }
 }
 
 const edit = (row) => {
-  // 编辑公告
+  form.value = {
+    id: row.id,
+    title: row.title,
+    type: row.type,
+    coverImage: row.coverImage || '',
+    content: row.content || '',
+    isTop: row.isTop || 0
+  }
+  showAdd.value = true
+}
+
+const remove = async (row) => {
+  try {
+    await ElMessageBox.confirm(`确定删除公告「${row.title}」？`, '提示', { type: 'warning' })
+  } catch (e) { return }
+  try {
+    await request.delete(`/notice/delete/${row.id}`)
+    ElMessage.success('删除成功')
+    loadData()
+  } catch (e) {
+    ElMessage.error('删除失败')
+  }
 }
 </script>

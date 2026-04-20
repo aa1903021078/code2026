@@ -85,4 +85,14 @@ public interface CollectorMapper {
      * 查询回收员今日完成统计（完成数+今日收入）
      */
     Map<String, Object> selectTodayCompleteStats(@Param("collectorId") Integer collectorId);
+
+    /**
+     * 统计在线回收员数量
+     */
+    int countOnline();
+
+    /**
+     * 查询所有可用回收员（已通过审核且启用）
+     */
+    List<Collector> selectAvailable();
 }

@@ -84,6 +84,9 @@ import {ref, onMounted} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {selectPendingAudit, auditPass, auditReject} from '@/api/collector'
 
+// 拦截器在业务错误时会原样返回 {code, msg}
+const isBizError = (res) => res && typeof res === 'object' && !Array.isArray(res) && res.code && res.code !== '200' && res.code !== 200
+
 const collectors = ref([])
 const loading = ref(false)
 const detailDialogVisible = ref(false)
@@ -93,15 +96,8 @@ const fetchCollectors = async () => {
   loading.value = true
   try {
     const res = await selectPendingAudit()
-    console.log('API响应:', res) // 调试用
-
-    // 关键修复：使用 == 代替 ===，兼容字符串 '200' 和数字 200
-    if (res.code == 200) {
-      collectors.value = res || []
-      console.log('数据赋值成功:', collectors.value)
-    } else {
-      ElMessage.warning(res.msg || '获取数据失败')
-    }
+    // 拦截器已解包 res.data，此处 res 直接是数组
+    collectors.value = Array.isArray(res) ? res : []
   } catch (error) {
     console.error('获取待审核回收员失败:', error)
     ElMessage.error('网络请求失败')
@@ -136,14 +132,14 @@ const audit = async (row, status) => {
       res = await auditReject(row.id, '不符合审核要求')
     }
 
-    // 同样修复：使用 == 判断
-    if (res.code == 200) {
-      ElMessage.success(status === 1 ? '审核通过' : '已拒绝')
-      detailDialogVisible.value = false
-      fetchCollectors()
-    } else {
+    // 同样修复：拦截器成功时已解包，业务失败时返回 {code, msg}
+    if (isBizError(res)) {
       ElMessage.error(res.msg || '操作失败')
+      return
     }
+    ElMessage.success(status === 1 ? '审核通过' : '已拒绝')
+    detailDialogVisible.value = false
+    fetchCollectors()
   } catch (error) {
     if (error !== 'cancel') {
       console.error('审核失败:', error)

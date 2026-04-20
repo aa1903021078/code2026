@@ -427,15 +427,7 @@ onMounted(() => {
 const loadTypes = async () => {
   try {
     const res = await request.get('/applianceType/selectEnabled')
-    if (res.code === '200') {
-      typeList.value = res || []
-    } else if (Array.isArray(res)) {
-      typeList.value = res
-    } else if (res && Array.isArray(res)) {
-      typeList.value = res
-    } else {
-      typeList.value = []
-    }
+    typeList.value = Array.isArray(res) ? res : []
   } catch (e) {
     console.error('加载品类失败:', e)
     typeList.value = []

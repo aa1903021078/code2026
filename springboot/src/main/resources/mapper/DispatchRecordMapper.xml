@@ -14,4 +14,18 @@
         update dispatch_record set is_accepted = #{isAccepted}
                                where order_id = #{orderId} and collector_id = #{collectorId}
     </update>
+
+    <select id="selectRecent" resultType="java.util.Map">
+        SELECT dr.id, dr.dispatch_type as dispatchType, dr.create_time as time,
+               ro.order_no as orderNo, c.name as collectorName
+        FROM dispatch_record dr
+                 LEFT JOIN recycle_order ro ON dr.order_id = ro.id
+                 LEFT JOIN collector c ON dr.collector_id = c.id
+        ORDER BY dr.create_time DESC
+            LIMIT #{limit}
+    </select>
+
+    <select id="countToday" resultType="int">
+        select count(*) from dispatch_record where date(create_time) = curdate()
+    </select>
 </mapper>

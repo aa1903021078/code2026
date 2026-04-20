@@ -337,6 +337,9 @@ import {
 } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 
+// 拦截器在业务错误时会原样返回 {code, msg}
+const isBizError = (res) => res && typeof res === 'object' && res.code && res.code !== '200' && res.code !== 200
+
 // 查询参数
 const params = reactive({
   name: '',
@@ -409,12 +412,9 @@ const loadData = async () => {
         status: params.status
       }
     })
-    if (res.code === '200') {
-      dataList.value = res?.list || []
-      total.value = res?.total || 0
-    } else {
-      ElMessage.error(res.msg || '获取数据失败')
-    }
+    // 拦截器已解包 res.data
+    dataList.value = Array.isArray(res?.list) ? res.list : []
+    total.value = res?.total || 0
   } catch (error) {
     console.error('加载数据失败:', error)
     ElMessage.error('网络请求失败')
@@ -448,11 +448,10 @@ const handleStatusChange = async (row, val) => {
       id: row.id,
       status: val
     })
-    if (res.code === '200') {
-      ElMessage.success(val === 1 ? '已启用' : '已禁用')
-    } else {
+    if (isBizError(res)) {
       throw new Error(res.msg)
     }
+    ElMessage.success(val === 1 ? '已启用' : '已禁用')
   } catch (error) {
     ElMessage.error('状态更新失败')
     row.status = val === 1 ? 0 : 1
@@ -494,12 +493,11 @@ const handleView = (row) => {
 const handleDelete = async (id) => {
   try {
     const res = await request.delete(`/applianceType/delete/${id}`)
-    if (res.code === '200') {
-      ElMessage.success('删除成功')
-      loadData()
-    } else {
+    if (isBizError(res)) {
       throw new Error(res.msg)
     }
+    ElMessage.success('删除成功')
+    loadData()
   } catch (error) {
     ElMessage.error('删除失败')
   }
@@ -516,10 +514,12 @@ const batchDelete = async () => {
 
     const ids = selectedRows.value.map(row => row.id).join(',')
     const res = await request.delete(`/applianceType/delete/${ids}`)
-    if (res.code === '200') {
-      ElMessage.success('批量删除成功')
-      loadData()
+    if (isBizError(res)) {
+      ElMessage.error(res.msg || '批量删除失败')
+      return
     }
+    ElMessage.success('批量删除成功')
+    loadData()
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('批量删除失败')
@@ -543,13 +543,12 @@ const submitForm = async () => {
         res = await request.post('/applianceType/add', form)
       }
 
-      if (res.code === '200') {
-        ElMessage.success(isEdit.value ? '修改成功' : '新增成功')
-        dialogVisible.value = false
-        loadData()
-      } else {
+      if (isBizError(res)) {
         throw new Error(res.msg)
       }
+      ElMessage.success(isEdit.value ? '修改成功' : '新增成功')
+      dialogVisible.value = false
+      loadData()
     } catch (error) {
       ElMessage.error(error.message || '操作失败')
     } finally {

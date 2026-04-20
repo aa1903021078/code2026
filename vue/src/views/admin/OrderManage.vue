@@ -655,15 +655,12 @@ const loadData = async () => {
 
     const res = await request.get('/recycleOrder/selectPage', {params})
 
-    if (res.code === '200' || res.code === 200) {
-      allOrders.value = res.list || res?.list || []
-      total.value = res.total || res?.total || 0
+    // 拦截器已解包 res.data，此处 res 即 PageInfo 对象
+    allOrders.value = Array.isArray(res?.list) ? res.list : []
+    total.value = res?.total || 0
 
-      // 更新统计
-      updateStats()
-    } else {
-      ElMessage.error(res.msg || '加载失败')
-    }
+    // 更新统计
+    updateStats()
   } catch (error) {
     console.error('加载订单失败:', error)
     ElMessage.error('网络错误，请检查连接')
@@ -696,9 +693,7 @@ const updateStats = () => {
 const loadCollectors = async () => {
   try {
     const res = await request.get('/collector/selectAll')
-    if (res.code === '200' || res.code === 200) {
-      collectors.value = res || []
-    }
+    collectors.value = Array.isArray(res) ? res : []
   } catch (error) {
     console.error('加载回收员失败:', error)
   }
@@ -749,7 +744,7 @@ const viewDetail = async (order) => {
   try {
     const res = await request.get(`/recycleOrder/selectById/${order.id}`)
 
-    if ((res.code === '200' || res.code === 200) && res) {
+    if (res && typeof res === 'object') {
       orderData = {...orderData, ...res}
     }
 
@@ -760,8 +755,8 @@ const viewDetail = async (order) => {
       try {
         const collectorRes = await request.get(`/collector/selectById/${collectorId}`)
 
-        if ((collectorRes.code === '200' || collectorRes.code === 200) && collectorres) {
-          const collector = collectorres
+        if (collectorRes && typeof collectorRes === 'object') {
+          const collector = collectorRes
           orderData.collectorName = collector.name || collector.username || '未知'
           orderData.collectorPhone = collector.phone || collector.tel || '-'
           orderData.collector = collector
@@ -796,20 +791,21 @@ const submitDispatch = async () => {
 
   submitting.value = true
   try {
-    const res = await request.post('/recycleOrder/dispatch', null, {
+    // 后端：/manualDispatch 接收 @RequestParam orderId、collectorId
+    const res = await request.post('/recycleOrder/manualDispatch', null, {
       params: {
         orderId: dispatchForm.orderId,
         collectorId: dispatchForm.collectorId
       }
     })
 
-    if (res.code === '200' || res.code === 200) {
-      ElMessage.success('派单成功')
-      dispatchVisible.value = false
-      await loadData()
-    } else {
+    if (res && typeof res === 'object' && res.code && res.code !== '200' && res.code !== 200) {
       ElMessage.error(res.msg || '派单失败')
+      return
     }
+    ElMessage.success('派单成功')
+    dispatchVisible.value = false
+    await loadData()
   } catch (error) {
     ElMessage.error('派单失败')
   } finally {
@@ -825,7 +821,11 @@ const cancelOrder = async (order) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
+  } catch (e) {
+    return
+  }
 
+  try {
     const res = await request.post('/recycleOrder/cancel', null, {
       params: {
         orderId: order.id,
@@ -833,14 +833,14 @@ const cancelOrder = async (order) => {
       }
     })
 
-    if (res.code === '200' || res.code === 200) {
-      ElMessage.success('订单已取消')
-      await loadData()
+    if (res && typeof res === 'object' && res.code && res.code !== '200' && res.code !== 200) {
+      ElMessage.error(res.msg || '取消失败')
+      return
     }
+    ElMessage.success('订单已取消')
+    await loadData()
   } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('取消失败')
-    }
+    ElMessage.error('取消失败')
   }
 }
 

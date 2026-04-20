@@ -19,7 +19,8 @@
       <div class="data-card warning">
         <div class="icon"><el-icon><Timer /></el-icon></div>
         <div class="content">
-          <div class="number">{{ overview.pendingOrders }}</div>
+          <!-- 待处理 = 待分配(0) + 待接单(1) + 已接单(2) + 已到达(3)，即所有未完成且未取消的订单 -->
+          <div class="number">{{ (overview.pendingOrders || 0) + (overview.processingOrders || 0) }}</div>
           <div class="label">待处理</div>
         </div>
       </div>
@@ -95,7 +96,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted,onUnmounted,nextTick,computed } from 'vue'
+import { ref, onMounted, onUnmounted, onActivated, nextTick, computed } from 'vue'
 import * as echarts from 'echarts'
 import request from '@/utils/request'
 
@@ -107,11 +108,7 @@ const overview = ref({
   totalCarbonSaved: 0
 })
 
-const todos = ref([
-  { content: '有5个订单待派单', time: '刚刚', type: 'warning' },
-  { content: '3个回收员注册待审核', time: '10分钟前', type: 'primary' },
-  { content: '今日回收目标已完成80%', time: '1小时前', type: 'success' }
-])
+const todos = ref([])
 
 const treeCount = computed(() => {
   return Math.floor((overview.value.totalCarbonSaved || 0) / 18)
@@ -125,11 +122,31 @@ const categoryChartRef = ref(null)
 let orderChartInstance = null
 let categoryChartInstance = null
 
-onMounted(() => {
-  loadData()
+onMounted(async () => {
+  await loadData()
   // 使用 nextTick 确保 DOM 完全渲染后再初始化图表
   nextTick(() => {
-    initCharts()
+    initOrderChart()
+    initCategoryChart()
+  })
+})
+
+// 由于 AdminLayout 的 keep-alive 缓存了 Dashboard，切换菜单回来不会重新 mount
+// 通过 onActivated 在每次激活时重新拉取数据并刷新图表（首次挂载由 onMounted 处理，这里只处理非首次激活）
+let isFirstActivate = true
+onActivated(async () => {
+  if (isFirstActivate) {
+    isFirstActivate = false
+    return
+  }
+  await loadData()
+  nextTick(() => {
+    orderChartInstance?.dispose()
+    categoryChartInstance?.dispose()
+    orderChartInstance = null
+    categoryChartInstance = null
+    initOrderChart()
+    initCategoryChart()
   })
 })
 
@@ -143,32 +160,60 @@ onUnmounted(() => {
   }
 })
 
+const dailyStats = ref([])
+const applianceStats = ref([])
+
 const loadData = async () => {
   try {
-    const res = await request.get('/statistics/overview')
-    overview.value = res
+    const [ov, daily, appliance] = await Promise.all([
+      request.get('/statistics/overview'),
+      request.get('/statistics/dailyStats'),
+      request.get('/statistics/applianceTypeStats')
+    ])
+    overview.value = ov || {}
+    dailyStats.value = Array.isArray(daily) ? daily : []
+    applianceStats.value = Array.isArray(appliance) ? appliance : []
+    buildTodos()
   } catch (e) {
     console.error('加载数据失败:', e)
   }
 }
 
-const initCharts = () => {
-  // 检查 DOM 是否存在
-  if (!orderChartRef.value || !categoryChartRef.value) {
-    console.error('图表容器未找到')
-    return
+const buildTodos = () => {
+  const items = []
+  if (overview.value.pendingOrders > 0) {
+    items.push({ content: `有 ${overview.value.pendingOrders} 个订单待派单`, time: '刚刚', type: 'warning' })
   }
+  if (overview.value.processingOrders > 0) {
+    items.push({ content: `${overview.value.processingOrders} 个订单正在处理中`, time: '刚刚', type: 'primary' })
+  }
+  if (overview.value.completedOrders > 0) {
+    items.push({ content: `累计已完成 ${overview.value.completedOrders} 个订单`, time: '统计', type: 'success' })
+  }
+  if (items.length === 0) {
+    items.push({ content: '暂无待办事项', time: '刚刚', type: 'info' })
+  }
+  todos.value = items
+}
 
-  // 订单趋势图 - 使用 ref.value 获取 DOM
+const initOrderChart = () => {
+  if (!orderChartRef.value) return
   orderChartInstance = echarts.init(orderChartRef.value)
+
+  // 取最近7天（dailyStats 按日期升序返回）
+  const recent = dailyStats.value.slice(-7)
+  const xData = recent.map(d => String(d.statDate || '').slice(5))
+  const yData = recent.map(d => d.totalOrders || 0)
+
   orderChartInstance.setOption({
+    tooltip: { trigger: 'axis' },
     xAxis: {
       type: 'category',
-      data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+      data: xData.length ? xData : ['暂无数据']
     },
     yAxis: { type: 'value' },
     series: [{
-      data: [120, 200, 150, 80, 70, 110, 130],
+      data: yData.length ? yData : [0],
       type: 'line',
       smooth: true,
       areaStyle: {
@@ -184,9 +229,21 @@ const initCharts = () => {
       itemStyle: { color: '#52c41a' }
     }]
   })
+}
 
-  // 品类占比图 - 使用 ref.value 获取 DOM
+const initCategoryChart = () => {
+  if (!categoryChartRef.value) return
   categoryChartInstance = echarts.init(categoryChartRef.value)
+
+  const colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452']
+  const pieData = applianceStats.value.length > 0
+      ? applianceStats.value.map((item, i) => ({
+          value: Number(item.count) || 0,
+          name: item.name || '未知',
+          itemStyle: { color: colors[i % colors.length] }
+        }))
+      : [{ value: 1, name: '暂无数据', itemStyle: { color: '#dcdfe6' } }]
+
   categoryChartInstance.setOption({
     tooltip: { trigger: 'item' },
     legend: { bottom: '5%' },
@@ -200,13 +257,7 @@ const initCharts = () => {
         borderWidth: 2
       },
       label: { show: false },
-      data: [
-        { value: 1048, name: '冰箱', itemStyle: { color: '#5470c6' } },
-        { value: 735, name: '空调', itemStyle: { color: '#91cc75' } },
-        { value: 580, name: '洗衣机', itemStyle: { color: '#fac858' } },
-        { value: 484, name: '电视', itemStyle: { color: '#ee6666' } },
-        { value: 300, name: '电脑', itemStyle: { color: '#73c0de' } }
-      ]
+      data: pieData
     }]
   })
 }

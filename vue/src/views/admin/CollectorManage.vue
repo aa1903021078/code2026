@@ -329,6 +329,9 @@ import {
 } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 
+// 拦截器在业务错误时会原样返回 {code, msg}，此处判别
+const isBizError = (res) => res && typeof res === 'object' && res.code && res.code !== '200' && res.code !== 200
+
 const params = reactive({
   username: '',
   name: '',
@@ -403,18 +406,15 @@ const loadData = async (showLoading = true) => {
       }
     })
 
-    if (res.code === '200' || res.code === 200) {
-      const list = res?.list || res?.records || res?.rows || res || []
-      const totalCount = res?.total || res?.totalCount || list.length
+    // 拦截器已解包 res.data
+    const list = res?.list || res?.records || res?.rows || (Array.isArray(res) ? res : []) || []
+    const totalCount = res?.total || res?.totalCount || list.length
 
-      collectorList.value = list.map(item => ({
-        ...item,
-        statusLoading: false
-      }))
-      total.value = totalCount
-    } else {
-      throw new Error(res.msg || '获取数据失败')
-    }
+    collectorList.value = list.map(item => ({
+      ...item,
+      statusLoading: false
+    }))
+    total.value = totalCount
   } catch (error) {
     console.error('加载数据失败:', error)
     ElMessage.error(error.message || '网络请求失败，请检查后端服务')
@@ -457,12 +457,11 @@ const handleStatusChange = async (row, val) => {
       id: row.id,
       status: val
     })
-    if (res.code === '200' || res.code === 200) {
-      ElMessage.success(val === 1 ? '已启用' : '已禁用')
-      await refreshRowData(row.id)
-    } else {
+    if (isBizError(res)) {
       throw new Error(res.msg || '操作失败')
     }
+    ElMessage.success(val === 1 ? '已启用' : '已禁用')
+    await refreshRowData(row.id)
   } catch (error) {
     ElMessage.error(error.message || '状态更新失败')
     row.status = val === 1 ? 0 : 1
@@ -475,7 +474,7 @@ const handleStatusChange = async (row, val) => {
 const refreshRowData = async (id) => {
   try {
     const res = await request.get(`/collector/selectById/${id}`)
-    if (res.code === '200' || res.code === 200) {
+    if (res && !isBizError(res)) {
       const index = collectorList.value.findIndex(item => item.id === id)
       if (index !== -1) {
         collectorList.value[index] = {
@@ -498,12 +497,11 @@ const handleToggleStatus = async (row) => {
       id: row.id,
       status: newStatus
     })
-    if (res.code === '200' || res.code === 200) {
-      ElMessage.success(newStatus === 1 ? '启用成功' : '禁用成功')
-      await refreshRowData(row.id)
-    } else {
+    if (isBizError(res)) {
       throw new Error(res.msg || '操作失败')
     }
+    ElMessage.success(newStatus === 1 ? '启用成功' : '禁用成功')
+    await refreshRowData(row.id)
   } catch (error) {
     ElMessage.error(error.message || '操作失败')
   }
@@ -525,7 +523,7 @@ const batchDisable = async () => {
     )
 
     const results = await Promise.allSettled(promises)
-    const successCount = results.filter(r => r.status === 'fulfilled' && (r.value.code === '200' || r.value.code === 200)).length
+    const successCount = results.filter(r => r.status === 'fulfilled' && !isBizError(r.value)).length
     const failCount = selectedRows.value.length - successCount
 
     if (failCount === 0) {
@@ -563,7 +561,7 @@ const handleView = async (row) => {
   try {
     // 调用后端接口获取最新数据
     const res = await request.get(`/collector/selectById/${row.id}`)
-    if (res.code === '200' || res.code === 200) {
+    if (res && !isBizError(res)) {
       currentRow.value = res
     } else {
       // 如果接口调用失败，使用列表中的数据
@@ -594,13 +592,12 @@ const submitForm = async () => {
       res = await request.post('/collector/add', form)
     }
 
-    if (res.code === '200' || res.code === 200) {
-      ElMessage.success(isEdit.value ? '修改成功' : '新增成功')
-      dialogVisible.value = false
-      await loadData()
-    } else {
+    if (isBizError(res)) {
       throw new Error(res.msg || '操作失败')
     }
+    ElMessage.success(isEdit.value ? '修改成功' : '新增成功')
+    dialogVisible.value = false
+    await loadData()
   } catch (error) {
     if (error.message) {
       ElMessage.error(error.message)

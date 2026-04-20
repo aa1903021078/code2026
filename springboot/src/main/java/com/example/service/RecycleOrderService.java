@@ -646,4 +646,22 @@ public class RecycleOrderService {
     public List<Map<String, Object>> getCollectorIncomeList(Integer collectorId, Integer days) {
         return recycleOrderMapper.selectCollectorIncomeList(collectorId, days);
     }
+
+    /**
+     * 派单页面统计数据
+     */
+    public Map<String, Object> getDispatchStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("pendingCount", recycleOrderMapper.countByStatus(0));
+        stats.put("onlineCollectors", collectorMapper.countOnline());
+        stats.put("todayDispatched", dispatchRecordMapper.countToday());
+        return stats;
+    }
+
+    /**
+     * 最近派单记录
+     */
+    public List<Map<String, Object>> getRecentDispatchRecords(int limit) {
+        return dispatchRecordMapper.selectRecent(limit);
+    }
 }

@@ -278,6 +278,13 @@ public class CollectorService {
     }
 
     /**
+     * 查询所有可用回收员（不依赖坐标）
+     */
+    public List<Collector> selectAvailable() {
+        return collectorMapper.selectAvailable();
+    }
+
+    /**
      * 回收员登录
      */
     public Collector login(Account account) {

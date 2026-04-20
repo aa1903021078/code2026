@@ -105,9 +105,7 @@ const loadLatestOrders = async () => {
   loading.value = true
   try {
     const res = await request.get('/recycle/orders')
-    if (res.code === '200') {
-      latestOrders.value = res.slice(0, 5) // 只显示最新5条
-    }
+    latestOrders.value = Array.isArray(res) ? res.slice(0, 5) : []
   } catch (error) {
     console.error(error)
   } finally {

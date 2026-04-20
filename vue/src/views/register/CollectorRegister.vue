@@ -269,31 +269,32 @@ const customUpload = async (options, type) => {
   try {
     const res = await fileApi.upload(file)
 
-    if (res.code === '200') {
-      // 调用原有的成功处理函数
-      handleIdCardSuccess(res, type)
-      onSuccess(res)  // 通知 el-upload 成功
-    } else {
+    // 业务错误时拦截器会原样返回 {code, msg}
+    if (res && typeof res === 'object' && res.code && res.code !== '200') {
       ElMessage.error(res.msg || '上传失败')
       onError(new Error(res.msg))
+      return
     }
+    // 成功时 res 为文件 URL 字符串
+    handleIdCardSuccess(res, type)
+    onSuccess(res)
   } catch (error) {
     ElMessage.error('上传失败：' + (error.response?.data?.msg || error.message))
     onError(error)
   }
 }
 
-const handleIdCardSuccess = (res, type) => {
-  if (res.code === '200') {
-    if (type === 'front') {
-      form.idCardFront = res
-    } else {
-      form.idCardBack = res
-    }
-    ElMessage.success('上传成功')
-  } else {
-    ElMessage.error(res.msg || '上传失败')
+const handleIdCardSuccess = (fileUrl, type) => {
+  if (!fileUrl || typeof fileUrl !== 'string') {
+    ElMessage.error('上传失败')
+    return
   }
+  if (type === 'front') {
+    form.idCardFront = fileUrl
+  } else {
+    form.idCardBack = fileUrl
+  }
+  ElMessage.success('上传成功')
 }
 
 const showAgreement = () => {
@@ -333,12 +334,12 @@ const submit = async () => {
       res = await collectorApi.register(params)
     }
 
-    if (res.code === '200') {
-      ElMessage.success(isResubmit.value ? '重新提交成功，请等待审核' : '申请提交成功，请等待审核')
-      router.push('/register-success')
-    } else {
+    if (res && typeof res === 'object' && res.code && res.code !== '200') {
       ElMessage.error(res.msg || '提交失败')
+      return
     }
+    ElMessage.success(isResubmit.value ? '重新提交成功，请等待审核' : '申请提交成功，请等待审核')
+    router.push('/register-success')
   } catch (error) {
     ElMessage.error(error.response?.data?.msg || '提交失败')
   } finally {
