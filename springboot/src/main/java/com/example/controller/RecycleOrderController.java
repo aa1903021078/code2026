@@ -39,6 +39,15 @@ public class RecycleOrderController {
     }
 
     /**
+     * 一键批量智能派单
+     */
+    @PostMapping("/batchDispatch")
+    public Result batchDispatch() {
+        Map<String, Integer> result = recycleOrderService.batchDispatch();
+        return Result.success(result);
+    }
+
+    /**
      * 手动派单
      */
     @PostMapping("/manualDispatch")

@@ -10,8 +10,10 @@ public class RecycleOrder {
     private String orderNo;
     private Integer userId;
     private Integer collectorId;
+    private Integer preferredCollectorId;  /** 用户指定的回收员ID */
     private Integer addressId;
     private String addressDetail;
+    private String community;  /** 社区/小区名称 */
     private BigDecimal addressLat;
     private BigDecimal addressLng;
     private Integer buildingType;  /** 1电梯房 2楼梯房 */
@@ -104,6 +106,14 @@ public class RecycleOrder {
         this.collectorId = collectorId;
     }
 
+    public Integer getPreferredCollectorId() {
+        return preferredCollectorId;
+    }
+
+    public void setPreferredCollectorId(Integer preferredCollectorId) {
+        this.preferredCollectorId = preferredCollectorId;
+    }
+
     public Integer getAddressId() {
         return addressId;
     }
@@ -118,6 +128,14 @@ public class RecycleOrder {
 
     public void setAddressDetail(String addressDetail) {
         this.addressDetail = addressDetail;
+    }
+
+    public String getCommunity() {
+        return community;
+    }
+
+    public void setCommunity(String community) {
+        this.community = community;
     }
 
     public BigDecimal getAddressLat() {

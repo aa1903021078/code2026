@@ -94,6 +94,24 @@
             limit 10
     </select>
 
+    <!-- 按区域+距离查询可用回收员 -->
+    <select id="selectNearbyByDistrict" resultType="com.example.entity.Collector">
+        select *,
+               (6371 * acos(cos(radians(#{lat})) * cos(radians(location_lat)) *
+                            cos(radians(location_lng) - radians(#{lng})) + sin(radians(#{lat})) *
+                                                                           sin(radians(location_lat)))) as distance
+        from collector
+        where work_status = 1
+          and status = 1
+          and audit_status = 1
+          and location_lat is not null
+          and location_lng is not null
+          and FIND_IN_SET(#{district}, service_area)
+        having distance &lt;= #{radius} / 1000
+        order by distance
+            limit 10
+    </select>
+
     <select id="selectPendingAudit" resultType="com.example.entity.Collector">
         select * from collector where audit_status = 0 order by create_time desc
     </select>

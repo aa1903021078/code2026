@@ -324,7 +324,7 @@ const submit = async () => {
       idCardFront: form.idCardFront,
       idCardBack: form.idCardBack,
       phone: form.phone,
-      serviceArea: form.serviceArea
+      serviceArea: form.serviceArea.replace(/[、，\s]+/g, ',').replace(/^,|,$/g, '')
     }
 
     let res

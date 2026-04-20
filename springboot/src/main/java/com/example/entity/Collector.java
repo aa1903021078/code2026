@@ -28,6 +28,15 @@ public class Collector extends Account{
 
     // 临时字段
     private String confirmPassword;  // 注册时确认密码
+    private Double distance;  // 距离计算结果（非数据库字段）
+
+    public Double getDistance() {
+        return distance;
+    }
+
+    public void setDistance(Double distance) {
+        this.distance = distance;
+    }
 
 
     public Integer getId() {

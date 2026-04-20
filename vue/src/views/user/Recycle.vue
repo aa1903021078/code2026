@@ -177,7 +177,9 @@
                   <el-tag v-if="selectedAddr.isDefault" size="small" type="success">默认</el-tag>
                 </div>
                 <div class="addr-detail">
-                  {{ selectedAddr.province }}{{ selectedAddr.city }}{{ selectedAddr.district }}{{ selectedAddr.detailAddress }}
+                  {{ selectedAddr.province }}{{ selectedAddr.city }}{{ selectedAddr.district }}
+                  <span v-if="selectedAddr.community" style="color:#52c41a;font-weight:500;">【{{ selectedAddr.community }}】</span>
+                  {{ selectedAddr.detailAddress }}
                 </div>
                 <div class="addr-change">点击更换地址 ></div>
               </div>
@@ -220,6 +222,23 @@
                 <el-radio-button :value="2">较急</el-radio-button>
                 <el-radio-button :value="3">紧急</el-radio-button>
               </el-radio-group>
+            </el-form-item>
+
+            <!-- 指定回收员（可选） -->
+            <el-form-item label="指定回收员（可选）">
+              <el-select v-model="form.preferredCollectorId" placeholder="不指定，由系统智能派单" clearable style="width: 100%"
+                         @focus="loadAvailableCollectors">
+                <el-option v-for="c in collectorOptions" :key="c.id" :value="c.id"
+                           :label="`${c.name}（${c.serviceArea ? c.serviceArea.replace(/,/g, '、') : '全区域'}）评分${c.rating || 5.0}`">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span>{{ c.name }}</span>
+                    <span style="color:#999;font-size:12px;">{{ c.serviceArea ? c.serviceArea.replace(/,/g, '、') : '全区域' }} · 评分{{ c.rating || 5.0 }}</span>
+                  </div>
+                </el-option>
+              </el-select>
+              <div style="margin-top:4px;font-size:12px;color:#999;">
+                💡 不选择则系统自动分配距离最近的回收员；指定后需管理员手动派单确认
+              </div>
             </el-form-item>
 
             <el-form-item label="物品照片（选填）">
@@ -292,7 +311,9 @@
                 <el-tag v-if="addr.isDefault" size="small" type="success">默认</el-tag>
               </div>
               <div class="addr-detail">
-                {{ addr.province }}{{ addr.city }}{{ addr.district }}{{ addr.detailAddress }}
+                {{ addr.province }}{{ addr.city }}{{ addr.district }}
+                <span v-if="addr.community" style="color:#52c41a;">【{{ addr.community }}】</span>
+                {{ addr.detailAddress }}
               </div>
               <div class="addr-tags">
                 <el-tag v-if="addr.buildingType === 1" size="small">电梯房</el-tag>
@@ -354,7 +375,8 @@ const form = reactive({
   applianceImgs: '',
   applianceDesc: '',
   contactName: '',
-  contactPhone: ''
+  contactPhone: '',
+  preferredCollectorId: null
 })
 
 const rules = {
@@ -370,6 +392,17 @@ const rules = {
 const typeList = ref([])
 const addressList = ref([])
 const selectedType = ref(null)
+const collectorOptions = ref([])
+
+const loadAvailableCollectors = async () => {
+  if (collectorOptions.value.length > 0) return // 避免重复加载
+  try {
+    const res = await request.get('/collector/selectAvailable')
+    collectorOptions.value = Array.isArray(res) ? res : []
+  } catch (e) {
+    console.error('加载回收员列表失败:', e)
+  }
+}
 
 const estimatedPoints = computed(() => {
   if (!selectedType.value || !form.estimatedWeight) return 0
@@ -643,7 +676,7 @@ const submitOrder = async () => {
     }
 
     // 关键修复：构建完整的地址详情字符串
-    const addressDetail = `${selectedAddress.province}${selectedAddress.city}${selectedAddress.district}${selectedAddress.detailAddress}`
+    const addressDetail = `${selectedAddress.province}${selectedAddress.city}${selectedAddress.district}${selectedAddress.community ? selectedAddress.community : ''}${selectedAddress.detailAddress}`
 
     const submitData = {
       userId: userId,
@@ -658,6 +691,7 @@ const submitOrder = async () => {
       addressId: form.addressId,
       // 新增：地址详情（后端必需的字段）
       addressDetail: addressDetail,  // 完整地址字符串
+      community: selectedAddress.community || '',  // 社区/小区
       addressLat: selectedAddress.latitude,      // 纬度
       addressLng: selectedAddress.longitude,     // 经度
       buildingType: selectedAddress.buildingType, // 楼栋类型
@@ -669,7 +703,8 @@ const submitOrder = async () => {
       expectTimeEnd: formatTime(form.expectTimeEnd),
       urgencyLevel: form.urgencyLevel,
       applianceImgs: form.applianceImgs || '',
-      applianceDesc: form.applianceDesc || ''
+      applianceDesc: form.applianceDesc || '',
+      preferredCollectorId: form.preferredCollectorId || null
     }
 
     console.log('提交数据（含地址详情）:', submitData)

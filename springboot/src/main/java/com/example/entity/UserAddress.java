@@ -11,6 +11,7 @@ public class UserAddress {
     private String province;
     private String city;
     private String district;
+    private String community;  /** 社区/小区名称 */
     private String detailAddress;
     private BigDecimal latitude;
     private BigDecimal longitude;
@@ -73,6 +74,14 @@ public class UserAddress {
 
     public void setDistrict(String district) {
         this.district = district;
+    }
+
+    public String getCommunity() {
+        return community;
+    }
+
+    public void setCommunity(String community) {
+        this.community = community;
     }
 
     public String getDetailAddress() {

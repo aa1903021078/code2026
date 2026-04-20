@@ -47,8 +47,13 @@
             :props="{ value: 'name', label: 'name', children: 'children', checkStrictly: false }"
             placeholder="省 / 市 / 区" filterable clearable style="width: 100%" @change="onRegionChange" />
       </el-form-item>
+      <el-form-item label="社区/小区" prop="community">
+        <el-input v-model="form.community" placeholder="请输入所在社区或小区名称，如：阳光花园、幸福小区" maxlength="50">
+          <template #prefix><el-icon><OfficeBuilding /></el-icon></template>
+        </el-input>
+      </el-form-item>
       <el-form-item label="详细地址" prop="detailAddress">
-        <el-input v-model="form.detailAddress" type="textarea" :rows="2" placeholder="街道、门牌号、小区楼栋等" maxlength="100" show-word-limit />
+        <el-input v-model="form.detailAddress" type="textarea" :rows="2" placeholder="街道、门牌号、楼栋等" maxlength="100" show-word-limit />
         <div class="input-hint" v-if="addressFromMap">
           <el-icon><InfoFilled /></el-icon>
           <span>已根据地图位置自动填充，可手动修改</span>
@@ -118,6 +123,7 @@ const form = reactive({
   province: '',
   city: '',
   district: '',
+  community: '',
   detailAddress: '',
   latitude: null,
   longitude: null,
@@ -127,6 +133,7 @@ const form = reactive({
 })
 const rules = {
   region: [{ required: true, message: '请选择所在地区', trigger: 'change' }],
+  community: [{ required: true, message: '请输入社区/小区名称', trigger: 'blur' }],
   detailAddress: [{ required: true, message: '请输入详细地址', trigger: 'blur' }],
   contactName: [{ required: true, message: '请输入联系人姓名', trigger: 'blur' }],
   contactPhone: [

@@ -397,7 +397,7 @@ const parseServiceArea = (value) => {
   if (typeof value !== 'string') return String(value)
   const trimmed = value.trim()
   if (!trimmed) return '未设置'
-  if (!['[', '{'].includes(trimmed[0])) return trimmed
+  if (!['[', '{'].includes(trimmed[0])) return trimmed.replace(/,/g, '、')
 
   try {
     const parsed = JSON.parse(trimmed)
@@ -456,7 +456,12 @@ const saveProfile = async () => {
 
   saving.value = true
   try {
-    await request.put('/collector/update', form)
+    const data = { ...form }
+    // 统一服务区域格式：顿号/中文逗号/空格 → 英文逗号
+    if (data.serviceArea) {
+      data.serviceArea = data.serviceArea.replace(/[、，\s]+/g, ',').replace(/^,|,$/g, '')
+    }
+    await request.put('/collector/update', data)
     syncLocalUser()
     ElMessage.success('保存成功')
     await loadProfile()

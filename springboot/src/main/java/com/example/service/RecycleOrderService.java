@@ -35,8 +35,6 @@ public class RecycleOrderService {
     @Resource
     private CollectorMapper collectorMapper;
 
-    @Resource
-    private UserService userService;
 
     @Resource
     private CollectorService collectorService;
@@ -52,15 +50,16 @@ public class RecycleOrderService {
 
     @Resource
     private DispatchRecordMapper dispatchRecordMapper;
+
+    @Resource
+    private UserAddressMapper userAddressMapper;
+
     @Autowired
     private ApplianceTypeMapper applianceTypeMapper;
 
     /**
-     *创建订单
-     * @Transactional 是Spring的事务管理注解，表示该方法需要事务支持，出错自动撤销所有操作
-     */
-    /**
      * 创建订单（修改版，添加机况价格计算）
+     * @Transactional 表示该方法需要事务支持，出错自动撤销所有操作
      */
     @Transactional
     public RecycleOrder create(RecycleOrder recycleOrder) {
@@ -262,7 +261,7 @@ public class RecycleOrderService {
 
 
     /**
-     * 智能派单
+     * 智能派单 —— 优先匹配负责该区域的回收员，再按距离排序
      */
     @Transactional
     public void dispatchOrder(Integer orderId) {
@@ -273,19 +272,41 @@ public class RecycleOrderService {
         if (recycleOrder.getStatus() != 0) {
             throw new CustomException("订单状态错误，无法派单");
         }
-        // 查询附近可用回收员
-        List<Collector> nearbyCollectors = collectorMapper.selectNearby(
-                recycleOrder.getAddressLat().doubleValue(),
-                recycleOrder.getAddressLng().doubleValue(),
-                5000.0 // 5公里范围
-        );
+        // 用户指定了回收员，跳过智能派单，提示管理员手动处理
+        if (recycleOrder.getPreferredCollectorId() != null) {
+            throw new CustomException("该订单用户指定了回收员，请手动派单");
+        }
 
-        if (nearbyCollectors.isEmpty()) {
+        double lat = recycleOrder.getAddressLat().doubleValue();
+        double lng = recycleOrder.getAddressLng().doubleValue();
+
+        // 解析订单所属区县（从 addressDetail 中提取，或直接查地址表）
+        String district = null;
+        if (recycleOrder.getAddressId() != null) {
+            UserAddress addr = userAddressMapper.selectById(recycleOrder.getAddressId());
+            if (addr != null) {
+                district = addr.getDistrict();
+            }
+        }
+
+        List<Collector> candidates;
+        // 优先查该区域内5km的回收员
+        if (district != null && !district.isEmpty()) {
+            candidates = collectorMapper.selectNearbyByDistrict(lat, lng, 5000.0, district);
+        } else {
+            candidates = List.of();
+        }
+        // 如果区域内没有，退回到纯距离查询
+        if (candidates.isEmpty()) {
+            candidates = collectorMapper.selectNearby(lat, lng, 5000.0);
+        }
+
+        if (candidates.isEmpty()) {
             throw new CustomException("附近暂无可用回收员");
         }
 
-        // 选择最合适的回收员（距离最近且接单数少）
-        Collector selectedCollector = nearbyCollectors.get(0);
+        // 选择距离最近的回收员
+        Collector selectedCollector = candidates.get(0);
 
         // 更新订单
         recycleOrder.setCollectorId(selectedCollector.getId());
@@ -294,15 +315,57 @@ public class RecycleOrderService {
         recycleOrder.setAssignTime(LocalDateTime.now());
         recycleOrderMapper.updateById(recycleOrder);
 
-        // 记录派单日志
+        // 记录派单日志，计算真实距离
+        double distKm = calcDistance(lat, lng,
+                selectedCollector.getLocationLat().doubleValue(),
+                selectedCollector.getLocationLng().doubleValue());
         DispatchRecord dispatchRecord = new DispatchRecord();
         dispatchRecord.setOrderId(orderId);
         dispatchRecord.setCollectorId(selectedCollector.getId());
         dispatchRecord.setDispatchType("auto");
-        // 计算距离（简化）
-        dispatchRecord.setDistance(new BigDecimal("1.5")); // 实际应计算
-        dispatchRecord.setEstimatedTime(15);
+        dispatchRecord.setDistance(BigDecimal.valueOf(distKm).setScale(2, RoundingMode.HALF_UP));
+        dispatchRecord.setEstimatedTime((int) Math.ceil(distKm * 3)); // 粗估：每公里3分钟
         dispatchRecordMapper.insert(dispatchRecord);
+    }
+
+    /**
+     * 一键批量智能派单：对所有待分配且未指定回收员的订单执行智能派单
+     * 返回结果：成功数 / 失败数
+     */
+    @Transactional
+    public Map<String, Integer> batchDispatch() {
+        List<RecycleOrder> pendingOrders = recycleOrderMapper.selectByStatus(0);
+        int success = 0, fail = 0;
+        for (RecycleOrder order : pendingOrders) {
+            if (order.getPreferredCollectorId() != null) {
+                // 跳过用户指定回收员的订单
+                fail++;
+                continue;
+            }
+            try {
+                dispatchOrder(order.getId());
+                success++;
+            } catch (Exception e) {
+                fail++;
+            }
+        }
+        Map<String, Integer> result = new HashMap<>();
+        result.put("success", success);
+        result.put("fail", fail);
+        return result;
+    }
+
+    /**
+     * Haversine 公式计算两点距离（km）
+     */
+    private double calcDistance(double lat1, double lng1, double lat2, double lng2) {
+        double R = 6371;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     /**

@@ -32,10 +32,15 @@
           <template #header>
             <div class="card-header">
               <span class="title">📋 待派单列表</span>
-              <el-radio-group v-model="viewMode" size="small">
-                <el-radio-button value="card">卡片</el-radio-button>
-                <el-radio-button value="table">表格</el-radio-button>
-              </el-radio-group>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <el-button type="success" size="small" :loading="batchLoading" @click="handleBatchDispatch">
+                  ⚡ 一键智能派单
+                </el-button>
+                <el-radio-group v-model="viewMode" size="small">
+                  <el-radio-button value="card">卡片</el-radio-button>
+                  <el-radio-button value="table">表格</el-radio-button>
+                </el-radio-group>
+              </div>
             </div>
           </template>
 
@@ -53,13 +58,19 @@
             >
               <div class="order-header">
                 <span class="order-no">{{ order.orderNo }}</span>
-                <el-tag size="small" type="warning">待派单</el-tag>
+                <div style="display:flex;gap:4px;">
+                  <el-tag v-if="order.preferredCollectorId" size="small" type="danger">用户指定</el-tag>
+                  <el-tag size="small" type="warning">待派单</el-tag>
+                </div>
               </div>
 
               <div class="order-body">
                 <div class="info-row">
                   <el-icon><Location /></el-icon>
-                  <span class="address" :title="order.addressDetail">{{ order.addressDetail }}</span>
+                  <span class="address" :title="order.addressDetail">
+                    <span v-if="order.community" style="color:#67c23a;font-weight:500;">【{{ order.community }}】</span>
+                    {{ order.addressDetail }}
+                  </span>
                 </div>
                 <div class="info-row">
                   <el-icon><Refrigerator /></el-icon>
@@ -94,8 +105,19 @@
           <!-- 表格视图 -->
           <el-table v-else :data="pendingOrders" style="width: 100%" v-loading="loading">
             <el-table-column prop="orderNo" label="订单号" width="140" />
+            <el-table-column label="社区" width="100">
+              <template #default="{ row }">
+                <span v-if="row.community" style="color:#67c23a;">{{ row.community }}</span>
+                <span v-else style="color:#ccc;">-</span>
+              </template>
+            </el-table-column>
             <el-table-column prop="addressDetail" label="地址" show-overflow-tooltip />
             <el-table-column prop="applianceTypeName" label="类型" width="100" />
+            <el-table-column label="指定" width="70">
+              <template #default="{ row }">
+                <el-tag v-if="row.preferredCollectorId" size="small" type="danger">是</el-tag>
+              </template>
+            </el-table-column>
             <el-table-column label="操作" width="200" fixed="right">
               <template #default="{ row }">
                 <el-button
@@ -297,6 +319,9 @@ const selectedCollectorId = ref(null)
 // 最近派单记录
 const recentRecords = ref([])
 
+// 批量派单loading
+const batchLoading = ref(false)
+
 // 获取待派单列表
 const loadPendingOrders = async () => {
   loading.value = true
@@ -470,6 +495,40 @@ const confirmManualDispatch = async () => {
   } finally {
     loadingOrderId.value = null
     dispatchType.value = ''
+  }
+}
+
+// 一键批量智能派单
+const handleBatchDispatch = async () => {
+  if (pendingOrders.value.length === 0) {
+    ElMessage.info('暂无待派单订单')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+        `将对所有待派单订单（共 ${pendingOrders.value.length} 个）执行智能派单。\n用户指定回收员的订单将被跳过，需手动派单。`,
+        '确认一键智能派单',
+        { confirmButtonText: '确认', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch (e) { return }
+
+  batchLoading.value = true
+  try {
+    const res = await request.post('/recycleOrder/batchDispatch')
+    if (isBizError(res)) {
+      ElMessage.error(res.msg || '批量派单失败')
+      return
+    }
+    const success = res?.success || 0
+    const fail = res?.fail || 0
+    ElMessage.success(`批量派单完成：成功 ${success} 个，跳过/失败 ${fail} 个`)
+    await loadPendingOrders()
+    loadDispatchStats()
+    loadRecentRecords()
+  } catch (error) {
+    ElMessage.error('批量派单失败')
+  } finally {
+    batchLoading.value = false
   }
 }
 
