@@ -281,10 +281,11 @@ public class RecycleOrderService {
         double lat = recycleOrder.getAddressLat().doubleValue();
         double lng = recycleOrder.getAddressLng().doubleValue();
 
-        // 取订单所属社区名称，用于匹配负责该社区的回收员
+        // 取订单所属社区和区名称，用于匹配负责该社区的回收员
         String community = recycleOrder.getCommunity();
+        String district = recycleOrder.getDistrict();
 
-        List<Collector> candidates = findDispatchCandidates(lat, lng, community);
+        List<Collector> candidates = findDispatchCandidates(lat, lng, community, district);
 
         if (candidates.isEmpty()) {
             throw new CustomException("附近暂无可用回收员");
@@ -319,17 +320,26 @@ public class RecycleOrderService {
         dispatchRecordMapper.insert(dispatchRecord);
     }
 
-    private List<Collector> findDispatchCandidates(double lat, double lng, String community) {
+    private List<Collector> findDispatchCandidates(double lat, double lng, String community, String district) {
         List<Collector> candidates;
+
+        // 第一优先级：社区+区精确匹配
         if (community != null && !community.isBlank()) {
-            candidates = collectorMapper.selectNearbyByCommunity(lat, lng, 5000.0, community.trim());
-        } else {
-            candidates = List.of();
-        }
-        if (!candidates.isEmpty()) {
-            return candidates;
+            candidates = collectorMapper.selectNearbyByCommunity(lat, lng, 5000.0, community.trim(), district);
+            if (!candidates.isEmpty()) {
+                return candidates;
+            }
         }
 
+        // 第二优先级：同区距离最近
+        if (district != null && !district.isBlank()) {
+            candidates = collectorMapper.selectNearbyByDistrict(lat, lng, 5000.0, district.trim());
+            if (!candidates.isEmpty()) {
+                return candidates;
+            }
+        }
+
+        // 第三优先级：附近5km范围
         candidates = collectorMapper.selectNearby(lat, lng, 5000.0);
         return candidates;
     }

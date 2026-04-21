@@ -1,4 +1,7 @@
 com\example\entity\User.class
+com\example\entity\CollectorServiceArea.class
+com\example\mapper\CollectorServiceAreaMapper.class
+com\example\controller\CollectorServiceAreaController.class
 com\example\controller\CommunityNoticeController.class
 com\example\mapper\CollectorMapper.class
 com\example\entity\DispatchRecord.class
@@ -16,6 +19,7 @@ com\example\mapper\CommunityNoticeMapper.class
 com\example\entity\Admin.class
 com\example\controller\WebController.class
 com\example\entity\CommunityNotice.class
+com\example\service\CollectorServiceAreaService.class
 com\example\mapper\PointsRecordMapper.class
 com\example\mapper\ApplianceTypeMapper.class
 com\example\service\RecycleOrderService.class

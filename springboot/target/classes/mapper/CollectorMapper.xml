@@ -94,19 +94,38 @@
             limit 10
     </select>
 
-    <!-- 按社区+距离查询可用回收员 -->
+    <!-- 按服务区域社区+距离查询可用回收员 -->
     <select id="selectNearbyByCommunity" resultType="com.example.entity.Collector">
-        select *,
-               (6371 * acos(cos(radians(#{lat})) * cos(radians(location_lat)) *
-                            cos(radians(location_lng) - radians(#{lng})) + sin(radians(#{lat})) *
-                                                                           sin(radians(location_lat)))) as distance
-        from collector
-        where work_status = 1
-          and status = 1
-          and audit_status = 1
-          and location_lat is not null
-          and location_lng is not null
-          and service_area LIKE CONCAT('%', #{community}, '%')
+        select c.*,
+               (6371 * acos(cos(radians(#{lat})) * cos(radians(csa.latitude)) *
+                            cos(radians(csa.longitude) - radians(#{lng})) + sin(radians(#{lat})) *
+                                                                           sin(radians(csa.latitude)))) as distance
+        from collector c
+        inner join collector_service_area csa on c.id = csa.collector_id
+        where c.work_status = 1
+          and c.status = 1
+          and c.audit_status = 1
+          and csa.community = #{community}
+          <if test="district != null and district != ''">
+          and csa.district = #{district}
+          </if>
+        having distance &lt;= #{radius} / 1000
+        order by distance
+            limit 10
+    </select>
+
+    <!-- 按服务区域同区查询可用回收员（社区匹配不到时降级） -->
+    <select id="selectNearbyByDistrict" resultType="com.example.entity.Collector">
+        select c.*,
+               (6371 * acos(cos(radians(#{lat})) * cos(radians(csa.latitude)) *
+                            cos(radians(csa.longitude) - radians(#{lng})) + sin(radians(#{lat})) *
+                                                                           sin(radians(csa.latitude)))) as distance
+        from collector c
+        inner join collector_service_area csa on c.id = csa.collector_id
+        where c.work_status = 1
+          and c.status = 1
+          and c.audit_status = 1
+          and csa.district = #{district}
         having distance &lt;= #{radius} / 1000
         order by distance
             limit 10

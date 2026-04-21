@@ -394,6 +394,11 @@ const workStatusText = (s) => {
   return '休息'
 }
 
+const clearSelectedOrderData = () => {
+  selectedOrder.value = null
+  nearbyCollectors.value = []
+}
+
 // 选中订单查看详情/地图
 const selectOrder = async (order) => {
   selectedOrder.value = order
@@ -406,7 +411,9 @@ const selectOrder = async (order) => {
         params: { lat: order.addressLat, lng: order.addressLng, radius: 5000 }
       })
       if (Array.isArray(res) && res.length > 0) {
-        nearbyCollectors.value = enrichCollectorsDistance(order, res)
+        // 补充服务区域距离：对每个回收员查其服务区域，取最近的服务区域经纬度算距离
+        const enriched = await enrichWithServiceAreaDistance(order, res)
+        nearbyCollectors.value = enriched
         return
       }
     } catch (error) {
@@ -417,10 +424,45 @@ const selectOrder = async (order) => {
   // 附近无人或无坐标，查询所有可用回收员
   try {
     const res = await request.get('/collector/selectAvailable')
-    nearbyCollectors.value = enrichCollectorsDistance(order, Array.isArray(res) ? res : [])
+    const list = Array.isArray(res) ? res : []
+    const enriched = await enrichWithServiceAreaDistance(order, list)
+    nearbyCollectors.value = enriched
   } catch (error) {
     console.error('获取可用回收员失败:', error)
   }
+}
+
+// 用服务区域经纬度替代回收员实时位置来计算距离
+const enrichWithServiceAreaDistance = async (order, collectors) => {
+  const orderLat = toNumber(order?.addressLat)
+  const orderLng = toNumber(order?.addressLng)
+  if (orderLat == null || orderLng == null || !Array.isArray(collectors)) {
+    return collectors || []
+  }
+
+  const result = []
+  for (const collector of collectors) {
+    try {
+      const area = await request.get(`/collectorServiceArea/selectByCollectorId/${collector.id}`)
+      if (area && area.latitude) {
+        const aLat = toNumber(area.latitude)
+        const aLng = toNumber(area.longitude)
+        const dist = (aLat != null && aLng != null) ? calcDistanceKm(orderLat, orderLng, aLat, aLng) : null
+        result.push({ ...collector, distance: dist })
+      } else {
+        // 没有服务区域，用实时位置
+        const cLat = toNumber(collector.locationLat)
+        const cLng = toNumber(collector.locationLng)
+        const dist = (cLat != null && cLng != null) ? calcDistanceKm(orderLat, orderLng, cLat, cLng) : null
+        result.push({ ...collector, distance: dist })
+      }
+    } catch {
+      result.push({ ...collector, distance: null })
+    }
+  }
+  // 按距离排序
+  result.sort((a, b) => (a.distance ?? 9999) - (b.distance ?? 9999))
+  return result
 }
 
 // 智能派单（自动）
@@ -452,7 +494,7 @@ const handleAutoDispatch = async (order) => {
     loadDispatchStats()
     loadRecentRecords()
     if (selectedOrder.value?.id === order.id) {
-      selectedOrder.value = null
+      clearSelectedOrderData()
     }
   } catch (error) {
     ElMessage.error(error?.response?.data?.message || '派单失败')
@@ -561,6 +603,7 @@ const handleBatchDispatch = async () => {
     const fail = res?.fail || 0
     ElMessage.success(`批量派单完成：成功 ${success} 个，跳过/失败 ${fail} 个`)
     await loadPendingOrders()
+    clearSelectedOrderData()
     loadDispatchStats()
     loadRecentRecords()
   } catch (error) {

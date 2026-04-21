@@ -4,6 +4,7 @@ D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\controller\ApplianceTypeController.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\controller\BannerController.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\controller\CollectorController.java
+D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\controller\CollectorServiceAreaController.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\controller\CommunityNoticeController.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\controller\FileController.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\controller\PointsExchangeController.java
@@ -19,6 +20,7 @@ D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\entity\ApplianceType.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\entity\Banner.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\entity\Collector.java
+D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\entity\CollectorServiceArea.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\entity\CommunityNotice.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\entity\DailyRecycleStats.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\entity\DispatchRecord.java
@@ -35,6 +37,7 @@ D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\mapper\ApplianceTypeMapper.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\mapper\BannerMapper.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\mapper\CollectorMapper.java
+D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\mapper\CollectorServiceAreaMapper.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\mapper\CommunityNoticeMapper.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\mapper\DailyRecycleStatsMapper.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\mapper\DispatchRecordMapper.java
@@ -48,6 +51,7 @@ D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\service\ApplianceTypeService.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\service\BannerService.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\service\CollectorService.java
+D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\service\CollectorServiceAreaService.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\service\CommunityNoticeService.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\service\PointsExchangeService.java
 D:\home\javapro\毕业设计项目\code2026\springboot\src\main\java\com\example\service\PointsGoodsService.java

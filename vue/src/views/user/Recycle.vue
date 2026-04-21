@@ -692,6 +692,7 @@ const submitOrder = async () => {
       // 新增：地址详情（后端必需的字段）
       addressDetail: addressDetail,  // 完整地址字符串
       community: selectedAddress.community || '',  // 社区/小区
+      district: selectedAddress.district || '',    // 区
       addressLat: selectedAddress.latitude,      // 纬度
       addressLng: selectedAddress.longitude,     // 经度
       buildingType: selectedAddress.buildingType, // 楼栋类型

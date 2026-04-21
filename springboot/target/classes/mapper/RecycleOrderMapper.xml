@@ -16,12 +16,12 @@
 
     <insert id="insert" parameterType="com.example.entity.RecycleOrder" useGeneratedKeys="true" keyProperty="id">
         insert into recycle_order (
-            order_no, user_id, collector_id, preferred_collector_id, address_id, address_detail, community, address_lat, address_lng,
+            order_no, user_id, collector_id, preferred_collector_id, address_id, address_detail, community, district, address_lat, address_lng,
             building_type, floor, contact_name, contact_phone, appliance_type_id, appliance_type_name,
             appliance_desc, appliance_imgs,brand_level, usage_years, functional_status, appearance_level,
             condition_factor, price_estimate, estimated_weight, expect_date, expect_time_start, expect_time_end,
             urgency_level, assign_type, status, points_earned, create_time)
-        values (#{orderNo}, #{userId}, #{collectorId}, #{preferredCollectorId}, #{addressId}, #{addressDetail}, #{community}, #{addressLat}, #{addressLng},
+        values (#{orderNo}, #{userId}, #{collectorId}, #{preferredCollectorId}, #{addressId}, #{addressDetail}, #{community}, #{district}, #{addressLat}, #{addressLng},
                 #{buildingType}, #{floor}, #{contactName}, #{contactPhone}, #{applianceTypeId}, #{applianceTypeName},
                 #{applianceDesc}, #{applianceImgs},#{brandLevel}, #{usageYears}, #{functionalStatus}, #{appearanceLevel},
                 #{conditionFactor}, #{priceEstimate}, #{estimatedWeight}, #{expectDate}, #{expectTimeStart}, #{expectTimeEnd},

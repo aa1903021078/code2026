@@ -14,6 +14,7 @@ public class RecycleOrder {
     private Integer addressId;
     private String addressDetail;
     private String community;  /** 社区/小区名称 */
+    private String district;   /** 区 */
     private BigDecimal addressLat;
     private BigDecimal addressLng;
     private Integer buildingType;  /** 1电梯房 2楼梯房 */
@@ -136,6 +137,14 @@ public class RecycleOrder {
 
     public void setCommunity(String community) {
         this.community = community;
+    }
+
+    public String getDistrict() {
+        return district;
+    }
+
+    public void setDistrict(String district) {
+        this.district = district;
     }
 
     public BigDecimal getAddressLat() {

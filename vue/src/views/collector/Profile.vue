@@ -98,6 +98,14 @@
                     <el-icon><Lock /></el-icon>
                     <span>账号安全</span>
                   </div>
+                  <div
+                    class="tab-item"
+                    :class="{ active: activeTab === 'serviceArea' }"
+                    @click="activeTab = 'serviceArea'"
+                  >
+                    <el-icon><Location /></el-icon>
+                    <span>服务区域</span>
+                  </div>
                 </div>
 
                 <div v-show="activeTab === 'profile'" class="tab-panel">
@@ -209,6 +217,82 @@
                     </div>
                   </el-form>
                 </div>
+
+                <!-- 服务区域管理 Tab -->
+                <div v-show="activeTab === 'serviceArea'" class="tab-panel">
+                  <div class="section-intro">
+                    <h3>服务区域设置</h3>
+                    <p>设置您负责的社区回收区域，系统将按区域智能派单。</p>
+                  </div>
+
+                  <div class="service-area-list" v-if="serviceArea">
+                    <div class="area-item">
+                      <div class="area-info">
+                        <div class="area-region">{{ serviceArea.province }} {{ serviceArea.city }} {{ serviceArea.district }}</div>
+                        <div class="area-community">{{ serviceArea.community }}</div>
+                        <div class="area-coord" v-if="serviceArea.latitude">
+                          经纬度：{{ Number(serviceArea.longitude).toFixed(6) }}, {{ Number(serviceArea.latitude).toFixed(6) }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <el-empty v-else description="暂未设置服务区域" :image-size="80" />
+
+                  <div class="form-actions" style="justify-content: flex-start;">
+                    <el-button type="primary" @click="openAddAreaDialog">
+                      <el-icon><Location /></el-icon> {{ serviceArea ? '修改服务区域' : '设置服务区域' }}
+                    </el-button>
+                  </div>
+                </div>
+
+                <!-- 设置服务区域弹窗 -->
+                <el-dialog v-model="showAddAreaDialog" :title="serviceArea ? '修改服务区域' : '设置服务区域'" width="700px" destroy-on-close @opened="initAreaMap">
+                  <el-form :model="areaForm" :rules="areaRules" ref="areaFormRef" label-width="100px">
+                    <el-form-item label="地图定位" prop="latitude">
+                      <div class="area-map-wrapper">
+                        <div class="area-map-toolbar">
+                          <div class="area-search-box">
+                            <el-icon><Search /></el-icon>
+                            <input v-model="areaSearchKeyword" placeholder="搜索地点" @keyup.enter="handleAreaSearch" />
+                          </div>
+                          <el-button size="small" @click="getAreaCurrentLocation">
+                            <el-icon><Aim /></el-icon> 定位
+                          </el-button>
+                        </div>
+                        <div ref="areaMapContainer" style="height: 300px; width: 100%;"></div>
+                        <div class="area-selected-loc" v-if="areaSelectedAddress">
+                          <span>📍 {{ areaSelectedAddress }}</span>
+                          <span class="area-coord-tag" v-if="areaForm.latitude">
+                            {{ Number(areaForm.longitude).toFixed(6) }}, {{ Number(areaForm.latitude).toFixed(6) }}
+                          </span>
+                        </div>
+                        <div v-if="areaSearchResults.length" class="area-search-results">
+                          <div v-for="(item, idx) in areaSearchResults" :key="idx" class="area-search-item" @click="selectAreaSearchResult(item)">
+                            <el-icon><Location /></el-icon>
+                            <div>
+                              <div style="font-weight:500;">{{ item.name }}</div>
+                              <div style="font-size:12px;color:#999;">{{ item.address }}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </el-form-item>
+                    <el-form-item label="所在地区" prop="region">
+                      <el-cascader v-model="areaForm.region" :options="regionData"
+                        :props="{ value: 'name', label: 'name', children: 'children' }"
+                        placeholder="省 / 市 / 区" filterable clearable style="width: 100%"
+                        :key="areaCascaderKey" @change="onAreaRegionChange" />
+                    </el-form-item>
+                    <el-form-item label="社区/小区" prop="community">
+                      <el-input v-model="areaForm.community" placeholder="请输入所在社区或小区名称" maxlength="50" />
+                    </el-form-item>
+                  </el-form>
+                  <template #footer>
+                    <el-button @click="showAddAreaDialog = false">取消</el-button>
+                    <el-button type="primary" :loading="areaSaving" @click="submitServiceArea">确认保存</el-button>
+                  </template>
+                </el-dialog>
+
               </el-card>
             </div>
 
@@ -274,10 +358,11 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Iphone, Lock, User, UserFilled } from '@element-plus/icons-vue'
+import { Aim, Iphone, Location, Lock, Plus, Search, User, UserFilled } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+import regionData from '@/assets/region-data.json'
 
 const user = JSON.parse(localStorage.getItem('user') || '{}')
 
@@ -390,7 +475,13 @@ const auditStatusMeta = computed(() => {
   return { text: '待审核', type: 'warning' }
 })
 
-const serviceAreaText = computed(() => parseServiceArea(form.serviceArea))
+const serviceAreaText = computed(() => {
+  if (serviceArea.value) {
+    const s = serviceArea.value
+    return `${s.district || ''} ${s.community || ''}`.trim() || '未设置'
+  }
+  return parseServiceArea(form.serviceArea)
+})
 
 const syncLocalUser = () => {
   const localUser = JSON.parse(localStorage.getItem('user') || '{}')
@@ -399,6 +490,7 @@ const syncLocalUser = () => {
 
 onMounted(() => {
   loadProfile()
+  loadServiceAreas()
 })
 
 const loadProfile = async () => {
@@ -467,6 +559,185 @@ const changePassword = async () => {
     changingPwd.value = false
   }
 }
+
+// ========== 服务区域管理 ==========
+const serviceArea = ref(null)
+const showAddAreaDialog = ref(false)
+const areaSaving = ref(false)
+const areaFormRef = ref()
+const areaMapContainer = ref(null)
+const areaSearchKeyword = ref('')
+const areaSearchResults = ref([])
+const areaSelectedAddress = ref('')
+const areaCascaderKey = ref(0)
+let areaMap = null
+let areaMarker = null
+let areaGeocoder = null
+let areaSearchSvc = null
+
+const areaForm = reactive({
+  collectorId: '',
+  province: '',
+  city: '',
+  district: '',
+  community: '',
+  latitude: null,
+  longitude: null,
+  region: []
+})
+
+const areaRules = {
+  region: [{ required: true, message: '请选择所在地区', trigger: 'change' }],
+  community: [{ required: true, message: '请输入社区/小区名称', trigger: 'blur' }],
+  latitude: [{ required: true, message: '请在地图上选择位置', trigger: 'change', type: 'number' }]
+}
+
+const loadServiceAreas = async () => {
+  try {
+    const res = await request.get(`/collectorServiceArea/selectByCollectorId/${user.id}`)
+    serviceArea.value = res || null
+  } catch (e) {}
+}
+
+const openAddAreaDialog = () => {
+  // 如果已有服务区域，回填数据
+  if (serviceArea.value) {
+    const s = serviceArea.value
+    Object.assign(areaForm, {
+      province: s.province || '', city: s.city || '', district: s.district || '',
+      community: s.community || '', latitude: s.latitude || null, longitude: s.longitude || null,
+      region: (s.province && s.city && s.district) ? [s.province, s.city, s.district] : []
+    })
+    areaSelectedAddress.value = `${s.province} ${s.city} ${s.district} ${s.community}`
+  } else {
+    Object.assign(areaForm, { province: '', city: '', district: '', community: '', latitude: null, longitude: null, region: [] })
+    areaSelectedAddress.value = ''
+  }
+  areaSearchKeyword.value = ''
+  areaSearchResults.value = []
+  areaCascaderKey.value++
+  showAddAreaDialog.value = true
+}
+
+const initAreaMap = () => {
+  nextTick(() => {
+    if (!areaMapContainer.value || !window.TMap) {
+      ElMessage.error('地图加载失败，请刷新页面')
+      return
+    }
+    const center = new TMap.LatLng(39.9042, 116.4074)
+    areaMap = new TMap.Map(areaMapContainer.value, { center, zoom: 14, viewMode: '2D' })
+    areaGeocoder = new TMap.service.Geocoder()
+    try { areaSearchSvc = new TMap.service.Search({ pageSize: 6 }) } catch (e) {}
+    areaMap.on('click', (evt) => {
+      placeAreaMarker(evt.latLng)
+      reverseAreaGeocode(evt.latLng)
+    })
+    getAreaCurrentLocation()
+  })
+}
+
+const placeAreaMarker = (latLng) => {
+  areaForm.latitude = latLng.lat
+  areaForm.longitude = latLng.lng
+  if (areaMarker) { areaMarker.setMap(null); areaMarker = null }
+  areaMarker = new TMap.MultiMarker({ map: areaMap, geometries: [{ id: 'sel', position: latLng }] })
+}
+
+const reverseAreaGeocode = (latLng) => {
+  if (!areaGeocoder) return
+  areaGeocoder.getAddress({ location: latLng }).then((result) => {
+    const comp = result.result.address_component
+    areaForm.province = comp.province
+    areaForm.city = comp.city
+    areaForm.district = comp.district
+    areaForm.region = [comp.province, comp.city, comp.district]
+    areaCascaderKey.value++
+    areaSelectedAddress.value = result.result.formatted_addresses?.recommend || result.result.address || ''
+  }).catch(() => {})
+}
+
+const handleAreaSearch = () => {
+  const kw = areaSearchKeyword.value.trim()
+  if (!kw) return
+  areaSearchResults.value = []
+  if (areaGeocoder) {
+    areaGeocoder.getLocation({ address: kw }).then((r) => {
+      if (r?.result?.location) {
+        areaSearchResults.value.push({ name: r.result.title || kw, address: r.result.address || kw, location: r.result.location })
+      }
+    }).catch(() => {})
+  }
+  if (areaSearchSvc) {
+    const center = areaMap.getCenter()
+    areaSearchSvc.searchNearby({ keyword: kw, center, radius: 50000 }).then((r) => {
+      const list = (r.data || []).map(i => ({ name: i.title, address: i.address, location: i.location }))
+      const names = areaSearchResults.value.map(i => i.name)
+      list.forEach(p => { if (!names.includes(p.name)) areaSearchResults.value.push(p) })
+    }).catch(() => {})
+  }
+}
+
+const selectAreaSearchResult = (item) => {
+  const latLng = new TMap.LatLng(item.location.lat, item.location.lng)
+  areaMap.setCenter(latLng)
+  areaMap.setZoom(16)
+  placeAreaMarker(latLng)
+  reverseAreaGeocode(latLng)
+  areaSearchKeyword.value = item.name
+  areaSearchResults.value = []
+}
+
+const getAreaCurrentLocation = () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const latLng = new TMap.LatLng(pos.coords.latitude, pos.coords.longitude)
+        areaMap.setCenter(latLng)
+        areaMap.setZoom(15)
+        placeAreaMarker(latLng)
+        reverseAreaGeocode(latLng)
+      },
+      () => { ElMessage.warning('定位失败，请手动在地图上选择位置') },
+      { enableHighAccuracy: true, timeout: 5000 }
+    )
+  }
+}
+
+const onAreaRegionChange = (val) => {
+  if (val && val.length === 3) {
+    areaForm.province = val[0]
+    areaForm.city = val[1]
+    areaForm.district = val[2]
+  }
+}
+
+const submitServiceArea = async () => {
+  const valid = await areaFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+  if (!areaForm.latitude || !areaForm.longitude) {
+    ElMessage.warning('请在地图上选择位置')
+    return
+  }
+  areaSaving.value = true
+  try {
+    const data = { ...areaForm, collectorId: user.id }
+    delete data.region
+    await request.post('/collectorServiceArea/save', data)
+    ElMessage.success('保存成功')
+    showAddAreaDialog.value = false
+    await loadServiceAreas()
+  } catch (e) {
+    ElMessage.error(e.message || '添加失败')
+  } finally {
+    areaSaving.value = false
+  }
+}
+
+
+onUnmounted(() => {
+  if (areaMap) { areaMap.destroy(); areaMap = null }
+})
 </script>
 
 <style scoped lang="scss">
@@ -896,6 +1167,116 @@ const changePassword = async () => {
 
 .full-width-number {
   width: 100%;
+}
+
+/* 服务区域样式 */
+.service-area-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.area-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.area-info {
+  flex: 1;
+}
+
+.area-region {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.area-community {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.area-coord {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.area-map-wrapper {
+  width: 100%;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.area-map-toolbar {
+  padding: 10px 12px;
+  background: #f5f7fa;
+  border-bottom: 1px solid #e4e7ed;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.area-search-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  padding: 0 12px;
+  height: 32px;
+
+  input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    margin: 0 8px;
+  }
+}
+
+.area-selected-loc {
+  padding: 8px 12px;
+  background: #e3f2fd;
+  border-top: 1px solid #bbdefb;
+  font-size: 13px;
+  color: #1565c0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.area-coord-tag {
+  font-size: 12px;
+  color: #757575;
+}
+
+.area-search-results {
+  max-height: 200px;
+  overflow-y: auto;
+  border-top: 1px solid #e4e7ed;
+}
+
+.area-search-item {
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  border-bottom: 1px solid #f5f5f5;
+
+  &:hover {
+    background: #e3f2fd;
+  }
 }
 
 :global(.profile-card > .el-card__body) {

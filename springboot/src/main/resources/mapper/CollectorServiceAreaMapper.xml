@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.CollectorServiceAreaMapper">
+    <insert id="insert" parameterType="com.example.entity.CollectorServiceArea" useGeneratedKeys="true" keyProperty="id">
+        insert into collector_service_area (collector_id, province, city, district, community, latitude, longitude)
+        values (#{collectorId}, #{province}, #{city}, #{district}, #{community}, #{latitude}, #{longitude})
+    </insert>
+    <delete id="deleteById">
+        delete from collector_service_area where id = #{id}
+    </delete>
+    <delete id="deleteByCollectorId">
+        delete from collector_service_area where collector_id = #{collectorId}
+    </delete>
+    <select id="selectByCollectorId" resultType="com.example.entity.CollectorServiceArea">
+        select * from collector_service_area where collector_id = #{collectorId} order by create_time desc
+    </select>
+    <select id="countByCollectorId" resultType="int">
+        select count(*) from collector_service_area where collector_id = #{collectorId}
+    </select>
+</mapper>
